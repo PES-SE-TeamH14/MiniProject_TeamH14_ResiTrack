@@ -2,13 +2,13 @@
 
 
 
-**Project:** ResiTrack - Apartment / Residencies Organizer  
+**Project:** ResiTrack - Apartment / Residencies Organizer
 
-**Course:** Software Engineering  
+**Course:** Software Engineering
 
-**Document:** Requirements Engineering (RE)  
+**Document:** Requirements Engineering (RE)
 
-**Version:** 1.0  
+**Version:** 1.0
 
 **Status:** Proposed process for the project team
 
@@ -219,4 +219,3 @@ GitHub issues, pull requests, the SRS, the Test Plan, and the Architecture Desig
 
 
 This document defines a proposed working process. It does not claim that stakeholder interviews, formal change approvals, or other activities have already occurred.
-
