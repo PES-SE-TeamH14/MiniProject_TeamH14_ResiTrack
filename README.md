@@ -12,3 +12,10 @@ Apartment / Residencies Organizer — a web-based platform to centralize tenant 
 | Sushanth S Rao | PES1UG24CS485 |
 
 Course: Software Engineering
+
+## Project Board
+
+Backlog and sprint planning: https://github.com/users/switchblade-kratos/projects/2
+
+- Sprint 1: 19 Oct – 23 Oct 2026
+- Sprint 2: 26 Oct – 30 Oct 2026
