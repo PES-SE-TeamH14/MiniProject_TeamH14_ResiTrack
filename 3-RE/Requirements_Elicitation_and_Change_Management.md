@@ -31,17 +31,11 @@ The requirements process considers the following stakeholders identified in the 
 
 
 | Stakeholder | Requirements and concerns |
-
 |---|---|
-
 | Administrator | Tenant registration, rent tracking, notices, flat inventory, maintenance oversight, document management, and receipts |
-
 | Resident (Tenant) | Login, maintenance requests, complaints, visitor logging, notices, and rent receipts |
-
 | Maintenance Staff | Access to assigned maintenance requests and status updates |
-
 | Owner | Read-only financial summaries and occupancy information |
-
 | Development and testing team | Technical constraints, implementation feasibility, verification, security, and maintainability |
 
 
@@ -187,21 +181,13 @@ The team may use the following statuses to communicate progress:
 
 
 | Status | Meaning |
-
 |---|---|
-
 | Proposed | A requirement or change has been suggested |
-
 | Under Review | The team is evaluating clarity, feasibility, and impact |
-
 | Approved | The requirement is accepted for planning |
-
 | In Progress | Implementation has started |
-
 | In Verification | Implementation is awaiting required testing or review |
-
 | Completed | Acceptance criteria have been satisfied |
-
 | Rejected / Deferred | The proposal was declined or postponed, with a recorded reason |
 
 
