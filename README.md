@@ -51,7 +51,7 @@ Application code is developed in Sprint 1 (19–23 Oct 2026). Setup and run inst
 
 ## Project Board
 
-Backlog and sprint planning: https://github.com/users/switchblade-kratos/projects/2
+Backlog and sprint planning: https://github.com/orgs/PES-SE-TeamH14/projects/1
 
 - Sprint 1: 19 Oct – 23 Oct 2026
 - Sprint 2: 26 Oct – 30 Oct 2026
