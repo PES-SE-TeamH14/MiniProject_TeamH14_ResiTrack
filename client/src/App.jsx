@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import VisitorsPage from './pages/admin/VisitorsPage.jsx';
 import Layout from './components/Layout.jsx';
 import HomePage from './pages/HomePage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
@@ -12,6 +13,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/admin/flats" element={<FlatsPage />} />
+	<Route path="/admin/visitors" element={<VisitorsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
