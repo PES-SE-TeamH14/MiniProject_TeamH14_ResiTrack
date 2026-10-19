@@ -1,3 +1,4 @@
+
 import { Link, NavLink, Outlet } from 'react-router-dom';
 
 const navClass = ({ isActive }) => (isActive ? 'nav-link active' : 'nav-link');
@@ -16,6 +17,9 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/admin/flats" className={navClass}>
             Flats
+          </NavLink>
+          <NavLink to="/complaints" className={navClass}>
+            Complaints
           </NavLink>
         </nav>
       </header>

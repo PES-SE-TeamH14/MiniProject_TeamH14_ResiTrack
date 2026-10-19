@@ -1,3 +1,4 @@
+const complaintRoutes = require('./complaintRoutes');
 const express = require('express');
 const healthRoutes = require('./healthRoutes');
 const flatRoutes = require('./flatRoutes');
@@ -6,6 +7,7 @@ const router = express.Router();
 
 router.use('/health', healthRoutes);
 router.use('/flats', flatRoutes); // FR-12 (#7)
+router.use('/complaints', complaintRoutes); // FR-13 (#14)
 
 // Feature routes are mounted here as each backlog item is built, for example:
 // router.use('/auth', authRoutes);        // FR-02  (#3)
