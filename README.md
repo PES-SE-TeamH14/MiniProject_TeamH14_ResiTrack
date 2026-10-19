@@ -33,7 +33,60 @@ Apartment complexes usually manage tenants, rent, maintenance, complaints, visit
 
 ### Installing and running
 
-Application code is developed in Sprint 1 (19–23 Oct 2026). Setup and run instructions will be added here once the project scaffold (issue #1) is merged.
+The app has two parts, each with its own `package.json`: `server/` (Express API) and `client/` (React app). Run them in two terminals.
+
+**1. API server**
+
+```bash
+cd server
+cp .env.example .env      # Windows: copy .env.example .env
+# edit .env and set MONGODB_URI to your local MongoDB or Atlas connection string
+npm install
+npm run dev               # http://localhost:5000/api/health
+```
+
+**2. React client**
+
+```bash
+cd client
+npm install
+npm run dev               # http://localhost:5173
+```
+
+The home page shows whether the API and the database are reachable.
+
+### Useful scripts
+
+| Folder | Command | What it does |
+|---|---|---|
+| `server` | `npm run dev` | Start the API with auto-reload |
+| `server` | `npm test` | Run unit/API tests with coverage (Jest + Supertest) |
+| `server` | `npm run lint` | Check code style (ESLint) |
+| `client` | `npm run dev` | Start the React app |
+| `client` | `npm run build` | Production build into `client/dist` |
+| `client` | `npm run lint` | Check code style (ESLint) |
+
+GitHub Actions runs lint, tests and build for both folders on every pull request.
+
+### Code layout (MVC)
+
+```
+server/src/
+  app.js            Express app: security headers, CORS, JSON parsing, routes, error handling
+  server.js         Connects to MongoDB and starts the server
+  config/           Database connection
+  models/           Mongoose schemas (one per collection)
+  controllers/      Request handlers (business logic per module)
+  routes/           URL → controller mapping, all under /api
+  middleware/       Auth/RBAC (added in #3/#4), 404 and central error handler
+  utils/            ApiError, asyncHandler
+client/src/
+  api/client.js     Shared Axios instance
+  components/       Layout and shared UI
+  pages/            One component per screen
+```
+
+All API errors use one JSON shape: `{ "error": { "code", "message", "field?" } }`.
 
 ## Repository Structure
 
