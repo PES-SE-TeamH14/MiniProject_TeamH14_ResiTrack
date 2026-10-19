@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install, lint, test and build each app
+        run: |
+          found=0
+          for dir in . server client backend frontend; do
+            if [ -f "$dir/package.json" ]; then
+              found=1
+              echo "::group::$dir"
+              (
+                cd "$dir"
+                if [ -f package-lock.json ]; then npm ci; else npm install; fi
+                npm run lint --if-present
+                npm test --if-present
+                npm run build --if-present
+              )
+              echo "::endgroup::"
+            fi
+          done
+          if [ "$found" = 0 ]; then
+            echo "No package.json found yet (scaffold not merged), nothing to build."
+          fi
