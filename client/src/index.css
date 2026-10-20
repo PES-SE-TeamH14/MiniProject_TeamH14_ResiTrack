@@ -57,7 +57,7 @@ body {
 }
 
 .app-main {
-  max-width: 960px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 24px 16px;
 }
@@ -114,6 +114,11 @@ select {
   background: #fff;
 }
 
+.form-note {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .form-actions {
   grid-column: 1 / -1;
   display: flex;
@@ -143,6 +148,16 @@ select {
 
 .btn-primary:hover {
   background: #1a7f37;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input:disabled {
+  background: #f6f8fa;
+  color: #57606a;
 }
 
 .btn-small {

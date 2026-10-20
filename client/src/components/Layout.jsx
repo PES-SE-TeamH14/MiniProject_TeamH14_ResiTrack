@@ -17,6 +17,9 @@ export default function Layout() {
           <NavLink to="/admin/flats" className={navClass}>
             Flats
           </NavLink>
+          <NavLink to="/admin/tenants" className={navClass}>
+            Tenants
+          </NavLink>
           <NavLink to="/admin/visitors" className={navClass}>
             Visitors
           </NavLink>
