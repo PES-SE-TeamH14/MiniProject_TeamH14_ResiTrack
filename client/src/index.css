@@ -28,6 +28,7 @@ body {
 
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
@@ -224,9 +225,9 @@ input:disabled {
   color: #8c959f;
 }
 
-.actions {
-  display: flex;
-  gap: 6px;
+/* Keep the cell a normal table cell (display: flex here breaks the row borders) */
+.actions .btn + .btn {
+  margin-left: 6px;
 }
 
 .badge {
@@ -252,7 +253,41 @@ input:disabled {
   color: #0969da;
 }
 
+.badge-red {
+  background: #ffebe9;
+  color: #a40e26;
+}
+
 .badge-outline {
   border-color: #d0d7de;
   color: #57606a;
+}
+
+/* ---------- Summary tiles ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #57606a;
+}
+
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
 }
