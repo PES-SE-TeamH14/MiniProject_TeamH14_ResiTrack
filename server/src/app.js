@@ -11,7 +11,13 @@ const app = express();
 
 // Security headers and CORS (only the React client may call the API in development)
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+app.use(
+  cors({
+    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    // Let the React client read the refreshed login token (sliding session, NFR-05)
+    exposedHeaders: ['X-Auth-Token'],
+  }),
+);
 
 // Body parsing
 app.use(express.json({ limit: '1mb' }));
