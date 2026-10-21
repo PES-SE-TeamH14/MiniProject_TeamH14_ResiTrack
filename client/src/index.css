@@ -45,6 +45,22 @@ body {
   background: #3d444d;
 }
 
+/* Logged-in user and Logout button in the header (FR-02) */
+.nav {
+  align-items: center;
+}
+
+.nav-user {
+  color: #fff;
+  padding: 6px 10px;
+  margin-left: 8px;
+}
+
+.nav-role {
+  color: #c9d1d9;
+  font-size: 0.85rem;
+}
+
 .brand {
   color: #fff;
   font-weight: 700;
@@ -290,4 +306,11 @@ input:disabled {
 .stat-value {
   font-size: 1.35rem;
   font-weight: 700;
+}
+
+/* ---------- Login ---------- */
+
+.login-card {
+  max-width: 420px;
+  grid-template-columns: 1fr;
 }
