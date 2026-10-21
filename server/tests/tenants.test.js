@@ -1,14 +1,20 @@
-const request = require('supertest');
 
 process.env.NODE_ENV = 'test';
 const app = require('../src/app');
 const Flat = require('../src/models/Flat');
 const Tenant = require('../src/models/Tenant');
 const db = require('./helpers/db');
+const { loginAs, as } = require('./helpers/auth');
 
 beforeAll(async () => {
   await db.connect();
   await Promise.all([Flat.init(), Tenant.init()]); // build unique indexes
+});
+// Routes need an Admin login since FR-14 (#4)
+let api;
+beforeEach(async () => {
+  const admin = await loginAs('admin');
+  api = as(app, admin.header);
 });
 afterEach(() => db.clear());
 afterAll(() => db.close());
@@ -32,7 +38,7 @@ function tenantData(overrides = {}) {
 
 describe('POST /api/tenants (FR-01, TC-01)', () => {
   it('registers a tenant with all fields and marks the flat occupied', async () => {
-    const res = await request(app).post('/api/tenants').send(tenantData());
+    const res = await api.post('/api/tenants').send(tenantData());
     expect(res.status).toBe(201);
 
     const { tenant } = res.body;
@@ -55,25 +61,25 @@ describe('POST /api/tenants (FR-01, TC-01)', () => {
     ['leaseStart', { leaseStart: undefined }],
     ['flat', { flat: undefined }],
   ])('requires %s', async (field, overrides) => {
-    const res = await request(app).post('/api/tenants').send(tenantData(overrides));
+    const res = await api.post('/api/tenants').send(tenantData(overrides));
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe(field);
   });
 
   it('rejects an invalid email', async () => {
-    const res = await request(app).post('/api/tenants').send(tenantData({ email: 'not-an-email' }));
+    const res = await api.post('/api/tenants').send(tenantData({ email: 'not-an-email' }));
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('email');
   });
 
   it('rejects an invalid phone number', async () => {
-    const res = await request(app).post('/api/tenants').send(tenantData({ phone: '12ab' }));
+    const res = await api.post('/api/tenants').send(tenantData({ phone: '12ab' }));
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('phone');
   });
 
   it('rejects a lease that ends before it starts', async () => {
-    const res = await request(app)
+    const res = await api
       .post('/api/tenants')
       .send(tenantData({ leaseStart: '2027-01-01', leaseEnd: '2026-12-31' }));
     expect(res.status).toBe(400);
@@ -81,8 +87,8 @@ describe('POST /api/tenants (FR-01, TC-01)', () => {
   });
 
   it('rejects a malformed or unknown flat', async () => {
-    const malformed = await request(app).post('/api/tenants').send(tenantData({ flat: 'abc' }));
-    const unknown = await request(app)
+    const malformed = await api.post('/api/tenants').send(tenantData({ flat: 'abc' }));
+    const unknown = await api
       .post('/api/tenants')
       .send(tenantData({ flat: '64b000000000000000000000' }));
     expect(malformed.status).toBe(400);
@@ -92,15 +98,15 @@ describe('POST /api/tenants (FR-01, TC-01)', () => {
 
   it('does not assign a deactivated flat (TC-12)', async () => {
     await Flat.updateOne({ _id: flat._id }, { isActive: false });
-    const res = await request(app).post('/api/tenants').send(tenantData());
+    const res = await api.post('/api/tenants').send(tenantData());
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('FLAT_INACTIVE');
     expect(await Tenant.countDocuments()).toBe(0);
   });
 
   it('does not assign an occupied flat', async () => {
-    await request(app).post('/api/tenants').send(tenantData());
-    const res = await request(app)
+    await api.post('/api/tenants').send(tenantData());
+    const res = await api
       .post('/api/tenants')
       .send(tenantData({ name: 'Second Person', email: 'second@example.com' }));
     expect(res.status).toBe(409);
@@ -108,10 +114,10 @@ describe('POST /api/tenants (FR-01, TC-01)', () => {
   });
 
   it('rejects a duplicate email with 409 and leaves the new flat vacant', async () => {
-    await request(app).post('/api/tenants').send(tenantData());
+    await api.post('/api/tenants').send(tenantData());
     const other = await Flat.create({ flatNumber: 'A-102', monthlyRent: 18000 });
 
-    const res = await request(app)
+    const res = await api
       .post('/api/tenants')
       .send(tenantData({ name: 'Copy', email: 'RAVI@example.com', flat: other._id.toString() }));
     expect(res.status).toBe(409);
@@ -130,7 +136,7 @@ describe('GET /api/tenants', () => {
   });
 
   it('lists current tenants by default, with their flat', async () => {
-    const res = await request(app).get('/api/tenants');
+    const res = await api.get('/api/tenants');
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(1);
     expect(res.body.tenants[0].name).toBe('Anita');
@@ -138,14 +144,14 @@ describe('GET /api/tenants', () => {
   });
 
   it('lists past and all tenants', async () => {
-    const past = await request(app).get('/api/tenants?status=past');
-    const all = await request(app).get('/api/tenants?status=all');
+    const past = await api.get('/api/tenants?status=past');
+    const all = await api.get('/api/tenants?status=all');
     expect(past.body.tenants[0].name).toBe('Zoya');
     expect(all.body.count).toBe(2);
   });
 
   it('rejects an invalid status filter', async () => {
-    const res = await request(app).get('/api/tenants?status=nope');
+    const res = await api.get('/api/tenants?status=nope');
     expect(res.status).toBe(400);
   });
 });
@@ -153,23 +159,23 @@ describe('GET /api/tenants', () => {
 describe('GET / PATCH /api/tenants/:id', () => {
   let tenantId;
   beforeEach(async () => {
-    const res = await request(app).post('/api/tenants').send(tenantData());
+    const res = await api.post('/api/tenants').send(tenantData());
     tenantId = res.body.tenant._id;
   });
 
   it('returns one tenant', async () => {
-    const res = await request(app).get(`/api/tenants/${tenantId}`);
+    const res = await api.get(`/api/tenants/${tenantId}`);
     expect(res.status).toBe(200);
     expect(res.body.tenant.flat.flatNumber).toBe('A-101');
   });
 
   it('returns 404 for an unknown tenant', async () => {
-    const res = await request(app).get('/api/tenants/64b000000000000000000000');
+    const res = await api.get('/api/tenants/64b000000000000000000000');
     expect(res.status).toBe(404);
   });
 
   it('updates contact details and lease dates', async () => {
-    const res = await request(app)
+    const res = await api
       .patch(`/api/tenants/${tenantId}`)
       .send({ phone: '9123456780', leaseEnd: '2028-10-31' });
     expect(res.status).toBe(200);
@@ -178,50 +184,50 @@ describe('GET / PATCH /api/tenants/:id', () => {
   });
 
   it('validates updated lease dates', async () => {
-    const res = await request(app).patch(`/api/tenants/${tenantId}`).send({ leaseEnd: '2026-01-01' });
+    const res = await api.patch(`/api/tenants/${tenantId}`).send({ leaseEnd: '2026-01-01' });
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('leaseEnd');
   });
 
   it('does not change the flat through PATCH', async () => {
     const other = await Flat.create({ flatNumber: 'C-301', monthlyRent: 22000 });
-    const res = await request(app).patch(`/api/tenants/${tenantId}`).send({ flat: other._id.toString() });
+    const res = await api.patch(`/api/tenants/${tenantId}`).send({ flat: other._id.toString() });
     expect(res.body.tenant.flat.flatNumber).toBe('A-101');
   });
 });
 
 describe('POST /api/tenants/:id/move-out', () => {
   it('ends the tenancy, frees the flat and allows deactivating it', async () => {
-    const created = await request(app).post('/api/tenants').send(tenantData());
+    const created = await api.post('/api/tenants').send(tenantData());
     const id = created.body.tenant._id;
 
-    const res = await request(app).post(`/api/tenants/${id}/move-out`);
+    const res = await api.post(`/api/tenants/${id}/move-out`);
     expect(res.status).toBe(200);
     expect(res.body.tenant.isActive).toBe(false);
     expect(res.body.tenant.movedOutAt).toBeTruthy();
     expect((await Flat.findById(flat._id)).isOccupied).toBe(false);
 
-    const deactivate = await request(app).patch(`/api/flats/${flat._id}`).send({ isActive: false });
+    const deactivate = await api.patch(`/api/flats/${flat._id}`).send({ isActive: false });
     expect(deactivate.status).toBe(200);
   });
 
   it('refuses to move out the same tenant twice', async () => {
-    const created = await request(app).post('/api/tenants').send(tenantData());
+    const created = await api.post('/api/tenants').send(tenantData());
     const id = created.body.tenant._id;
-    await request(app).post(`/api/tenants/${id}/move-out`);
-    const again = await request(app).post(`/api/tenants/${id}/move-out`);
+    await api.post(`/api/tenants/${id}/move-out`);
+    const again = await api.post(`/api/tenants/${id}/move-out`);
     expect(again.status).toBe(409);
   });
 
   it('lets a former tenant register again with the same email', async () => {
-    const created = await request(app).post('/api/tenants').send(tenantData());
-    await request(app).post(`/api/tenants/${created.body.tenant._id}/move-out`);
-    const again = await request(app).post('/api/tenants').send(tenantData());
+    const created = await api.post('/api/tenants').send(tenantData());
+    await api.post(`/api/tenants/${created.body.tenant._id}/move-out`);
+    const again = await api.post('/api/tenants').send(tenantData());
     expect(again.status).toBe(201);
   });
 
   it('returns 404 for an unknown tenant', async () => {
-    const res = await request(app).post('/api/tenants/64b000000000000000000000/move-out');
+    const res = await api.post('/api/tenants/64b000000000000000000000/move-out');
     expect(res.status).toBe(404);
   });
 });

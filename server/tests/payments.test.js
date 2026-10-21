@@ -1,4 +1,3 @@
-const request = require('supertest');
 
 process.env.NODE_ENV = 'test';
 const app = require('../src/app');
@@ -6,10 +5,17 @@ const Flat = require('../src/models/Flat');
 const Tenant = require('../src/models/Tenant');
 const Payment = require('../src/models/Payment');
 const db = require('./helpers/db');
+const { loginAs, as } = require('./helpers/auth');
 
 beforeAll(async () => {
   await db.connect();
   await Promise.all([Flat.init(), Tenant.init(), Payment.init()]);
+});
+// Routes need an Admin login since FR-14 (#4)
+let api;
+beforeEach(async () => {
+  const admin = await loginAs('admin');
+  api = as(app, admin.header);
 });
 afterEach(() => db.clear());
 afterAll(() => db.close());
@@ -45,7 +51,7 @@ beforeEach(async () => {
 });
 
 function pay(overrides = {}) {
-  return request(app)
+  return api
     .post('/api/payments')
     .send({
       tenant: ravi._id.toString(),
@@ -138,7 +144,7 @@ describe('GET /api/payments', () => {
   });
 
   it('lists all payments, newest first, with tenant and flat', async () => {
-    const res = await request(app).get('/api/payments');
+    const res = await api.get('/api/payments');
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(3);
     expect(res.body.payments[0].tenant.name).toBe('Meera Nair');
@@ -146,23 +152,23 @@ describe('GET /api/payments', () => {
   });
 
   it('filters by month and by tenant', async () => {
-    const october = await request(app).get('/api/payments?month=2026-10');
-    const raviOnly = await request(app).get(`/api/payments?tenant=${ravi._id}`);
+    const october = await api.get('/api/payments?month=2026-10');
+    const raviOnly = await api.get(`/api/payments?tenant=${ravi._id}`);
     expect(october.body.count).toBe(2);
     expect(raviOnly.body.count).toBe(2);
   });
 
   it('rejects invalid filters', async () => {
-    const badMonth = await request(app).get('/api/payments?month=10-2026');
-    const badTenant = await request(app).get('/api/payments?tenant=xyz');
+    const badMonth = await api.get('/api/payments?month=10-2026');
+    const badTenant = await api.get('/api/payments?tenant=xyz');
     expect(badMonth.status).toBe(400);
     expect(badTenant.status).toBe(400);
   });
 
   it('returns one payment, or 404', async () => {
-    const [first] = (await request(app).get('/api/payments')).body.payments;
-    const found = await request(app).get(`/api/payments/${first._id}`);
-    const missing = await request(app).get('/api/payments/64b000000000000000000000');
+    const [first] = (await api.get('/api/payments')).body.payments;
+    const found = await api.get(`/api/payments/${first._id}`);
+    const missing = await api.get('/api/payments/64b000000000000000000000');
     expect(found.status).toBe(200);
     expect(missing.status).toBe(404);
   });
@@ -171,7 +177,7 @@ describe('GET /api/payments', () => {
 describe('GET /api/payments/status (paid / unpaid per month)', () => {
   it('marks each current tenant Paid or Unpaid, with totals', async () => {
     await pay();
-    const res = await request(app).get('/api/payments/status?month=2026-10');
+    const res = await api.get('/api/payments/status?month=2026-10');
     expect(res.status).toBe(200);
 
     const byName = Object.fromEntries(res.body.rows.map((r) => [r.tenant.name, r]));
@@ -190,19 +196,19 @@ describe('GET /api/payments/status (paid / unpaid per month)', () => {
   });
 
   it('only includes tenants whose lease covers the month', async () => {
-    const res = await request(app).get('/api/payments/status?month=2026-03');
+    const res = await api.get('/api/payments/status?month=2026-03');
     expect(res.body.rows.map((r) => r.tenant.name)).toEqual(['Ravi Kumar']); // Meera starts in June
   });
 
   it('leaves out tenants who have moved out', async () => {
     await Tenant.updateOne({ _id: meera._id }, { isActive: false });
-    const res = await request(app).get('/api/payments/status?month=2026-10');
+    const res = await api.get('/api/payments/status?month=2026-10');
     expect(res.body.summary.tenants).toBe(1);
   });
 
   it('requires a valid month', async () => {
-    const missing = await request(app).get('/api/payments/status');
-    const bad = await request(app).get('/api/payments/status?month=2026-00');
+    const missing = await api.get('/api/payments/status');
+    const bad = await api.get('/api/payments/status?month=2026-00');
     expect(missing.status).toBe(400);
     expect(bad.status).toBe(400);
   });

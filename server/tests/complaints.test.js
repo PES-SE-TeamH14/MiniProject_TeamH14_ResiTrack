@@ -1,15 +1,21 @@
 
-const request = require('supertest');
 
 process.env.NODE_ENV = 'test';
 const app = require('../src/app');
 const Complaint = require('../src/models/Complaint');
 const db = require('./helpers/db');
+const { loginAs, as } = require('./helpers/auth');
 
 beforeAll(async () => {
   await db.connect();
 });
 
+// Routes need an Admin login since FR-14 (#4)
+let api;
+beforeEach(async () => {
+  const admin = await loginAs('admin');
+  api = as(app, admin.header);
+});
 afterEach(() => db.clear());
 afterAll(() => db.close());
 
@@ -22,7 +28,7 @@ const sample = {
 
 describe('POST /api/complaints', () => {
   it('creates a complaint with Open status and initial history', async () => {
-    const res = await request(app).post('/api/complaints').send(sample);
+    const res = await api.post('/api/complaints').send(sample);
 
     expect(res.status).toBe(201);
     expect(res.body.complaint.title).toBe(sample.title);
@@ -38,7 +44,7 @@ describe('POST /api/complaints', () => {
     const payload = { ...sample };
     delete payload.title;
 
-    const res = await request(app).post('/api/complaints').send(payload);
+    const res = await api.post('/api/complaints').send(payload);
 
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('title');
@@ -49,7 +55,7 @@ describe('POST /api/complaints', () => {
       const payload = { ...sample };
       delete payload[field];
 
-      const res = await request(app).post('/api/complaints').send(payload);
+      const res = await api.post('/api/complaints').send(payload);
 
       expect(res.status).toBe(400);
       expect(res.body.error.field).toBe(field);
@@ -57,7 +63,7 @@ describe('POST /api/complaints', () => {
   });
 
   it('does not allow the client to set the initial status', async () => {
-    const res = await request(app)
+    const res = await api
       .post('/api/complaints')
       .send({ ...sample, status: 'Resolved' });
 
@@ -72,7 +78,7 @@ describe('GET /api/complaints', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     await Complaint.create({ ...sample, title: 'Second complaint' });
 
-    const res = await request(app).get('/api/complaints');
+    const res = await api.get('/api/complaints');
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(2);
@@ -81,7 +87,7 @@ describe('GET /api/complaints', () => {
   });
 
   it('returns an empty list when there are no complaints', async () => {
-    const res = await request(app).get('/api/complaints');
+    const res = await api.get('/api/complaints');
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(0);
@@ -97,7 +103,7 @@ describe('PATCH /api/complaints/:id/status', () => {
   });
 
   it('updates status and appends a timestamped history entry', async () => {
-    const res = await request(app)
+    const res = await api
       .patch(`/api/complaints/${complaint._id}/status`)
       .send({ status: 'In Progress', note: 'Technician assigned' });
 
@@ -110,7 +116,7 @@ describe('PATCH /api/complaints/:id/status', () => {
   });
 
   it('rejects an invalid status', async () => {
-    const res = await request(app)
+    const res = await api
       .patch(`/api/complaints/${complaint._id}/status`)
       .send({ status: 'Cancelled' });
 
@@ -119,7 +125,7 @@ describe('PATCH /api/complaints/:id/status', () => {
   });
 
   it('rejects a status update that changes nothing', async () => {
-    const res = await request(app)
+    const res = await api
       .patch(`/api/complaints/${complaint._id}/status`)
       .send({ status: 'Open' });
 
@@ -128,7 +134,7 @@ describe('PATCH /api/complaints/:id/status', () => {
   });
 
   it('returns 404 for an unknown complaint', async () => {
-    const res = await request(app)
+    const res = await api
       .patch('/api/complaints/64b000000000000000000000/status')
       .send({ status: 'Resolved' });
 

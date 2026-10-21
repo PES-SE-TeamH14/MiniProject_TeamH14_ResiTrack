@@ -1,15 +1,21 @@
 
-const request = require('supertest');
 
 process.env.NODE_ENV = 'test';
 const app = require('../src/app');
 const Visitor = require('../src/models/Visitor');
 const db = require('./helpers/db');
+const { loginAs, as } = require('./helpers/auth');
 
 beforeAll(async () => {
   await db.connect();
 });
 
+// Routes need an Admin login since FR-14 (#4)
+let api;
+beforeEach(async () => {
+  const admin = await loginAs('admin');
+  api = as(app, admin.header);
+});
 afterEach(() => db.clear());
 afterAll(() => db.close());
 
@@ -22,7 +28,7 @@ const sample = {
 
 describe('POST /api/visitors', () => {
   it('registers a visitor and creates timestamps', async () => {
-    const res = await request(app).post('/api/visitors').send(sample);
+    const res = await api.post('/api/visitors').send(sample);
 
     expect(res.status).toBe(201);
     expect(res.body.visitor.visitorName).toBe('Ravi Kumar');
@@ -35,7 +41,7 @@ describe('POST /api/visitors', () => {
   it('requires the visitor name', async () => {
     const missingName = { ...sample };
     delete missingName.visitorName;
-    const res = await request(app).post('/api/visitors').send(missingName);
+    const res = await api.post('/api/visitors').send(missingName);
 
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('visitorName');
@@ -46,7 +52,7 @@ describe('POST /api/visitors', () => {
       const payload = { ...sample };
       delete payload[field];
 
-      const res = await request(app).post('/api/visitors').send(payload);
+      const res = await api.post('/api/visitors').send(payload);
 
       expect(res.status).toBe(400);
       expect(res.body.error.field).toBe(field);
@@ -54,7 +60,7 @@ describe('POST /api/visitors', () => {
   });
 
   it('does not allow the client to set the creation timestamp', async () => {
-    const res = await request(app)
+    const res = await api
       .post('/api/visitors')
       .send({ ...sample, createdAt: '2000-01-01T00:00:00.000Z' });
 
@@ -69,7 +75,7 @@ describe('GET /api/visitors', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     await Visitor.create({ ...sample, visitorName: 'Second visitor' });
 
-    const res = await request(app).get('/api/visitors');
+    const res = await api.get('/api/visitors');
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(2);
@@ -78,7 +84,7 @@ describe('GET /api/visitors', () => {
   });
 
   it('returns an empty list when there are no visitors', async () => {
-    const res = await request(app).get('/api/visitors');
+    const res = await api.get('/api/visitors');
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(0);

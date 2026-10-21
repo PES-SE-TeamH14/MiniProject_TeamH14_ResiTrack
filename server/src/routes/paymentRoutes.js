@@ -5,11 +5,12 @@ const {
   getRentStatus,
   getPayment,
 } = require('../controllers/paymentController');
+const { authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Admin only (FR-06, FR-14). When the RBAC middleware from #4 is merged, add:
-//   router.use(protect, authorize('admin'));
+// Admin only (FR-06, FR-14)
+router.use(authorize('admin'));
 
 router.route('/').get(listPayments).post(createPayment);
 router.get('/status', getRentStatus); // must come before /:id
