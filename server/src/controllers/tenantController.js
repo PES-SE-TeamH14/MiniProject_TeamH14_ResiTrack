@@ -3,6 +3,7 @@ const Tenant = require('../models/Tenant');
 const Flat = require('../models/Flat');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { recordAuditLog } = require('../utils/auditLogger');
 
 const CONTACT_FIELDS = ['name', 'email', 'phone', 'leaseStart', 'leaseEnd'];
 const FLAT_SUMMARY = 'flatNumber block floor type monthlyRent';
@@ -56,8 +57,16 @@ const createTenant = asyncHandler(async (req, res) => {
     throw err;
   }
 
-  await tenant.populate('flat', FLAT_SUMMARY);
-  res.status(201).json({ tenant });
+    await tenant.populate('flat', FLAT_SUMMARY);
+
+    await recordAuditLog({
+      actorId: req.user._id,
+      action: 'TENANT_CREATED',
+      resourceType: 'Tenant',
+      resourceId: tenant._id,
+    });
+
+    res.status(201).json({ tenant });
 });
 
 /**
@@ -93,10 +102,18 @@ const updateTenant = asyncHandler(async (req, res) => {
   const tenant = await Tenant.findById(req.params.id);
   if (!tenant) throw new ApiError(404, 'NOT_FOUND', 'Tenant not found.');
 
-  Object.assign(tenant, pick(req.body, CONTACT_FIELDS));
-  await tenant.save();
-  await tenant.populate('flat', FLAT_SUMMARY);
-  res.json({ tenant });
+    Object.assign(tenant, pick(req.body, CONTACT_FIELDS));
+    await tenant.save();
+    await tenant.populate('flat', FLAT_SUMMARY);
+
+    await recordAuditLog({
+      actorId: req.user._id,
+      action: 'TENANT_UPDATED',
+      resourceType: 'Tenant',
+      resourceId: tenant._id,
+    });
+
+    res.json({ tenant });
 });
 
 /**
@@ -115,6 +132,14 @@ const moveOutTenant = asyncHandler(async (req, res) => {
   await Flat.updateOne({ _id: tenant.flat }, { isOccupied: false });
 
   await tenant.populate('flat', FLAT_SUMMARY);
+
+  await recordAuditLog({
+    actorId: req.user._id,
+    action: 'TENANT_MOVED_OUT',
+    resourceType: 'Tenant',
+    resourceId: tenant._id,
+  });
+
   res.json({ tenant });
 });
 

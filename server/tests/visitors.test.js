@@ -1,8 +1,9 @@
 
-
 process.env.NODE_ENV = 'test';
+
 const app = require('../src/app');
 const Visitor = require('../src/models/Visitor');
+const AuditLog = require('../src/models/AuditLog');
 const db = require('./helpers/db');
 const { loginAs, as } = require('./helpers/auth');
 
@@ -10,12 +11,14 @@ beforeAll(async () => {
   await db.connect();
 });
 
-// Routes need an Admin login since FR-14 (#4)
 let api;
+let admin;
+
 beforeEach(async () => {
-  const admin = await loginAs('admin');
+  admin = await loginAs('admin');
   api = as(app, admin.header);
 });
+
 afterEach(() => db.clear());
 afterAll(() => db.close());
 
@@ -38,13 +41,45 @@ describe('POST /api/visitors', () => {
     expect(await Visitor.countDocuments()).toBe(1);
   });
 
+  it('creates an audit entry for an admin visitor registration', async () => {
+    const res = await api.post('/api/visitors').send(sample);
+
+    expect(res.status).toBe(201);
+
+    const logs = await AuditLog.find({ action: 'VISITOR_REGISTERED' }).lean();
+
+    expect(logs).toHaveLength(1);
+    expect(String(logs[0].actorId)).toBe(String(admin.user._id));
+    expect(logs[0].resourceType).toBe('Visitor');
+    expect(logs[0].resourceId).toBe(String(res.body.visitor._id));
+    expect(logs[0].timestamp).toBeDefined();
+  });
+
+  it('does not include visitor personal details in the audit entry', async () => {
+    await api.post('/api/visitors').send(sample);
+
+    const log = await AuditLog.findOne({
+      action: 'VISITOR_REGISTERED',
+    }).lean();
+
+    expect(log).not.toBeNull();
+
+    const serializedLog = JSON.stringify(log);
+    expect(serializedLog).not.toContain(sample.visitorName);
+    expect(serializedLog).not.toContain(sample.contact);
+    expect(serializedLog).not.toContain(sample.purpose);
+    expect(serializedLog).not.toContain(sample.flatNumber);
+  });
+
   it('requires the visitor name', async () => {
     const missingName = { ...sample };
     delete missingName.visitorName;
+
     const res = await api.post('/api/visitors').send(missingName);
 
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('visitorName');
+    expect(await AuditLog.countDocuments()).toBe(0);
   });
 
   it('requires contact, purpose and flat number', async () => {
@@ -57,6 +92,8 @@ describe('POST /api/visitors', () => {
       expect(res.status).toBe(400);
       expect(res.body.error.field).toBe(field);
     }
+
+    expect(await AuditLog.countDocuments()).toBe(0);
   });
 
   it('does not allow the client to set the creation timestamp', async () => {

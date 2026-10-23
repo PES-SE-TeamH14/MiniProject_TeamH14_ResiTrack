@@ -1,7 +1,9 @@
+
 const User = require('../models/User');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { signToken } = require('../utils/token');
+const { recordAuditLog } = require('../utils/auditLogger');
 
 /**
  * POST /api/auth/login — Public. Log in with email and password (FR-02).
@@ -29,7 +31,18 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'ACCOUNT_DISABLED', 'This account has been deactivated. Contact the administrator.');
   }
 
-  res.json({ token: signToken(user), user });
+  const token = signToken(user);
+
+  if (user.role === 'admin') {
+    await recordAuditLog({
+      actorId: user._id,
+      action: 'ADMIN_LOGIN',
+      resourceType: 'User',
+      resourceId: user._id,
+    });
+  }
+
+  res.json({ token, user });
 });
 
 module.exports = { login };

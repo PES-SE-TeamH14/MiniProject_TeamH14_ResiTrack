@@ -1,7 +1,7 @@
-
 const Complaint = require('../models/Complaint');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { recordAuditLog } = require('../utils/auditLogger');
 
 const CREATE_FIELDS = ['title', 'description', 'category', 'flatNumber'];
 const VALID_STATUSES = Complaint.STATUSES;
@@ -70,6 +70,18 @@ const updateComplaintStatus = asyncHandler(async (req, res) => {
   });
 
   await complaint.save();
+
+  // Only audit status changes performed by an administrator.
+  if (req.user.role === 'admin') {
+    await recordAuditLog({
+      actorId: req.user._id,
+      action: 'COMPLAINT_STATUS_UPDATED',
+      resourceType: 'Complaint',
+      resourceId: complaint._id,
+      metadata: { status },
+    });
+  }
+
   res.json({ complaint });
 });
 
