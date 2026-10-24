@@ -1,8 +1,9 @@
 
-
 process.env.NODE_ENV = 'test';
+
 const app = require('../src/app');
 const Complaint = require('../src/models/Complaint');
+const AuditLog = require('../src/models/AuditLog');
 const db = require('./helpers/db');
 const { loginAs, as } = require('./helpers/auth');
 
@@ -10,12 +11,14 @@ beforeAll(async () => {
   await db.connect();
 });
 
-// Routes need an Admin login since FR-14 (#4)
 let api;
+let admin;
+
 beforeEach(async () => {
-  const admin = await loginAs('admin');
+  admin = await loginAs('admin');
   api = as(app, admin.header);
 });
+
 afterEach(() => db.clear());
 afterAll(() => db.close());
 
@@ -115,29 +118,82 @@ describe('PATCH /api/complaints/:id/status', () => {
     expect(res.body.complaint.statusHistory[1].changedAt).toBeDefined();
   });
 
-  it('rejects an invalid status', async () => {
+  it('creates an audit entry for an admin status update', async () => {
+    const res = await api
+      .patch(`/api/complaints/${complaint._id}/status`)
+      .send({ status: 'In Progress', note: 'Technician assigned' });
+
+    expect(res.status).toBe(200);
+
+    const logs = await AuditLog.find({
+      action: 'COMPLAINT_STATUS_UPDATED',
+    }).lean();
+
+    expect(logs).toHaveLength(1);
+    expect(String(logs[0].actorId)).toBe(String(admin.user._id));
+    expect(logs[0].resourceType).toBe('Complaint');
+    expect(logs[0].resourceId).toBe(String(complaint._id));
+    expect(logs[0].metadata).toEqual({ status: 'In Progress' });
+    expect(logs[0].timestamp).toBeDefined();
+  });
+
+  it('does not include complaint details or status notes in the audit entry', async () => {
+    await api
+      .patch(`/api/complaints/${complaint._id}/status`)
+      .send({ status: 'In Progress', note: 'Technician assigned' });
+
+    const log = await AuditLog.findOne({
+      action: 'COMPLAINT_STATUS_UPDATED',
+    }).lean();
+
+    expect(log).not.toBeNull();
+
+    const serializedLog = JSON.stringify(log);
+    expect(serializedLog).not.toContain(sample.title);
+    expect(serializedLog).not.toContain(sample.description);
+    expect(serializedLog).not.toContain('Technician assigned');
+    expect(serializedLog).not.toContain(sample.flatNumber);
+    expect(log.metadata).toEqual({ status: 'In Progress' });
+  });
+
+  it('rejects an invalid status without creating an audit entry', async () => {
     const res = await api
       .patch(`/api/complaints/${complaint._id}/status`)
       .send({ status: 'Cancelled' });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_STATUS');
+    expect(
+      await AuditLog.countDocuments({
+        action: 'COMPLAINT_STATUS_UPDATED',
+      }),
+    ).toBe(0);
   });
 
-  it('rejects a status update that changes nothing', async () => {
+  it('rejects a status update that changes nothing without creating an audit entry', async () => {
     const res = await api
       .patch(`/api/complaints/${complaint._id}/status`)
       .send({ status: 'Open' });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('STATUS_UNCHANGED');
+    expect(
+      await AuditLog.countDocuments({
+        action: 'COMPLAINT_STATUS_UPDATED',
+      }),
+    ).toBe(0);
   });
 
-  it('returns 404 for an unknown complaint', async () => {
+  it('returns 404 for an unknown complaint without creating an audit entry', async () => {
     const res = await api
       .patch('/api/complaints/64b000000000000000000000/status')
       .send({ status: 'Resolved' });
 
     expect(res.status).toBe(404);
+    expect(
+      await AuditLog.countDocuments({
+        action: 'COMPLAINT_STATUS_UPDATED',
+      }),
+    ).toBe(0);
   });
 });

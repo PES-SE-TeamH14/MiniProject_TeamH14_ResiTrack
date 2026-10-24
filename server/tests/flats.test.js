@@ -1,28 +1,39 @@
-
 process.env.NODE_ENV = 'test';
+
 const app = require('../src/app');
 const Flat = require('../src/models/Flat');
+const AuditLog = require('../src/models/AuditLog');
 const db = require('./helpers/db');
 const { loginAs, as } = require('./helpers/auth');
+
+let admin;
+let api;
 
 beforeAll(async () => {
   await db.connect();
   await Flat.init(); // build the unique index on flatNumber
 });
-// Routes need an Admin login since FR-14 (#4)
-let api;
+
 beforeEach(async () => {
-  const admin = await loginAs('admin');
+  admin = await loginAs('admin');
   api = as(app, admin.header);
 });
+
 afterEach(() => db.clear());
 afterAll(() => db.close());
 
-const sample = { flatNumber: 'a-101', block: 'A', floor: 1, type: '2BHK', monthlyRent: 18000 };
+const sample = {
+  flatNumber: 'a-101',
+  block: 'A',
+  floor: 1,
+  type: '2BHK',
+  monthlyRent: 18000,
+};
 
 describe('POST /api/flats (FR-12 add)', () => {
   it('adds a flat and stores the flat number in upper case', async () => {
     const res = await api.post('/api/flats').send(sample);
+
     expect(res.status).toBe(201);
     expect(res.body.flat.flatNumber).toBe('A-101');
     expect(res.body.flat.isActive).toBe(true);
@@ -30,39 +41,66 @@ describe('POST /api/flats (FR-12 add)', () => {
     expect(await Flat.countDocuments()).toBe(1);
   });
 
+  it('creates an audit entry for the admin who created the flat', async () => {
+    const res = await api.post('/api/flats').send(sample);
+
+    expect(res.status).toBe(201);
+
+    const logs = await AuditLog.find({
+      action: 'FLAT_CREATED',
+      resourceId: String(res.body.flat._id),
+    });
+
+    expect(logs).toHaveLength(1);
+    expect(String(logs[0].actorId)).toBe(String(admin.user._id));
+    expect(logs[0].resourceType).toBe('Flat');
+    expect(logs[0].timestamp).toBeInstanceOf(Date);
+  });
+
   it('requires a flat number', async () => {
     const res = await api.post('/api/flats').send({ monthlyRent: 15000 });
+
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('flatNumber');
+    expect(await AuditLog.countDocuments()).toBe(0);
   });
 
   it('requires a monthly rent', async () => {
     const res = await api.post('/api/flats').send({ flatNumber: 'B-201' });
+
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('monthlyRent');
+    expect(await AuditLog.countDocuments()).toBe(0);
   });
 
   it('rejects a negative rent', async () => {
     const res = await api.post('/api/flats').send({ ...sample, monthlyRent: -1 });
+
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('monthlyRent');
+    expect(await AuditLog.countDocuments()).toBe(0);
   });
 
   it('rejects an unknown flat type', async () => {
     const res = await api.post('/api/flats').send({ ...sample, type: 'Villa' });
+
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('type');
+    expect(await AuditLog.countDocuments()).toBe(0);
   });
 
   it('rejects a duplicate flat number with 409', async () => {
     await api.post('/api/flats').send(sample);
     const res = await api.post('/api/flats').send({ ...sample, flatNumber: 'A-101' });
+
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('DUPLICATE');
+    expect(await AuditLog.countDocuments({ action: 'FLAT_CREATED' })).toBe(1);
   });
 
   it('ignores isOccupied sent by the client', async () => {
     const res = await api.post('/api/flats').send({ ...sample, isOccupied: true });
+
     expect(res.status).toBe(201);
     expect(res.body.flat.isOccupied).toBe(false);
   });
@@ -79,6 +117,7 @@ describe('GET /api/flats', () => {
 
   it('lists all flats sorted by flat number', async () => {
     const res = await api.get('/api/flats');
+
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(3);
     expect(res.body.flats.map((f) => f.flatNumber)).toEqual(['A-101', 'A-102', 'A-103']);
@@ -87,17 +126,20 @@ describe('GET /api/flats', () => {
   it('filters active and inactive flats', async () => {
     const active = await api.get('/api/flats?status=active');
     const inactive = await api.get('/api/flats?status=inactive');
+
     expect(active.body.count).toBe(2);
     expect(inactive.body.flats[0].flatNumber).toBe('A-102');
   });
 
   it('available=true returns only active, vacant flats', async () => {
     const res = await api.get('/api/flats?available=true');
+
     expect(res.body.flats.map((f) => f.flatNumber)).toEqual(['A-101']);
   });
 
   it('rejects an invalid status filter', async () => {
     const res = await api.get('/api/flats?status=broken');
+
     expect(res.status).toBe(400);
   });
 });
@@ -106,6 +148,7 @@ describe('GET /api/flats/:id', () => {
   it('returns one flat', async () => {
     const flat = await Flat.create({ flatNumber: 'C-301', monthlyRent: 22000 });
     const res = await api.get(`/api/flats/${flat._id}`);
+
     expect(res.status).toBe(200);
     expect(res.body.flat.flatNumber).toBe('C-301');
   });
@@ -113,6 +156,7 @@ describe('GET /api/flats/:id', () => {
   it('returns 404 for an unknown or malformed id', async () => {
     const missing = await api.get('/api/flats/64b000000000000000000000');
     const malformed = await api.get('/api/flats/not-an-id');
+
     expect(missing.status).toBe(404);
     expect(malformed.status).toBe(404);
   });
@@ -120,15 +164,31 @@ describe('GET /api/flats/:id', () => {
 
 describe('PATCH /api/flats/:id (FR-12 edit / deactivate)', () => {
   let flat;
+
   beforeEach(async () => {
-    flat = await Flat.create({ flatNumber: 'D-401', block: 'D', monthlyRent: 25000 });
+    flat = await Flat.create({
+      flatNumber: 'D-401',
+      block: 'D',
+      monthlyRent: 25000,
+    });
   });
 
-  it('edits a flat', async () => {
-    const res = await api.patch(`/api/flats/${flat._id}`).send({ monthlyRent: 26000, type: '3BHK' });
+  it('edits a flat and creates an audit entry', async () => {
+    const res = await api.patch(`/api/flats/${flat._id}`)
+      .send({ monthlyRent: 26000, type: '3BHK' });
+
     expect(res.status).toBe(200);
     expect(res.body.flat.monthlyRent).toBe(26000);
     expect(res.body.flat.type).toBe('3BHK');
+
+    const logs = await AuditLog.find({
+      action: 'FLAT_UPDATED',
+      resourceId: String(flat._id),
+    });
+
+    expect(logs).toHaveLength(1);
+    expect(String(logs[0].actorId)).toBe(String(admin.user._id));
+    expect(logs[0].resourceType).toBe('Flat');
   });
 
   it('deactivates and reactivates a flat', async () => {
@@ -140,28 +200,41 @@ describe('PATCH /api/flats/:id (FR-12 edit / deactivate)', () => {
 
     const on = await api.patch(`/api/flats/${flat._id}`).send({ isActive: true });
     expect(on.body.flat.isActive).toBe(true);
+
+    expect(await AuditLog.countDocuments({
+      action: 'FLAT_UPDATED',
+      resourceId: String(flat._id),
+    })).toBe(2);
   });
 
   it('refuses to deactivate an occupied flat', async () => {
     await Flat.updateOne({ _id: flat._id }, { isOccupied: true });
     const res = await api.patch(`/api/flats/${flat._id}`).send({ isActive: false });
+
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('FLAT_OCCUPIED');
+    expect(await AuditLog.countDocuments({ action: 'FLAT_UPDATED' })).toBe(0);
   });
 
   it('validates edited values', async () => {
     const res = await api.patch(`/api/flats/${flat._id}`).send({ monthlyRent: -5 });
+
     expect(res.status).toBe(400);
+    expect(await AuditLog.countDocuments({ action: 'FLAT_UPDATED' })).toBe(0);
   });
 
   it('rejects renaming to an existing flat number', async () => {
     await Flat.create({ flatNumber: 'D-402', monthlyRent: 25000 });
     const res = await api.patch(`/api/flats/${flat._id}`).send({ flatNumber: 'd-402' });
+
     expect(res.status).toBe(409);
   });
 
   it('returns 404 for an unknown flat', async () => {
-    const res = await api.patch('/api/flats/64b000000000000000000000').send({ monthlyRent: 1 });
+    const res = await api.patch('/api/flats/64b000000000000000000000')
+      .send({ monthlyRent: 1 });
+
     expect(res.status).toBe(404);
+    expect(await AuditLog.countDocuments({ action: 'FLAT_UPDATED' })).toBe(0);
   });
 });

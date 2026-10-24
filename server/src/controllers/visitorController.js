@@ -1,6 +1,6 @@
-
 const Visitor = require('../models/Visitor');
 const asyncHandler = require('../utils/asyncHandler');
+const { recordAuditLog } = require('../utils/auditLogger');
 
 const CREATE_FIELDS = ['visitorName', 'contact', 'purpose', 'flatNumber'];
 
@@ -18,6 +18,17 @@ function pick(body, fields) {
  */
 const createVisitor = asyncHandler(async (req, res) => {
   const visitor = await Visitor.create(pick(req.body, CREATE_FIELDS));
+
+  // Only record actions performed by an administrator.
+  if (req.user.role === 'admin') {
+    await recordAuditLog({
+      actorId: req.user._id,
+      action: 'VISITOR_REGISTERED',
+      resourceType: 'Visitor',
+      resourceId: visitor._id,
+    });
+  }
+
   res.status(201).json({ visitor });
 });
 

@@ -3,6 +3,7 @@ const Payment = require('../models/Payment');
 const Tenant = require('../models/Tenant');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { recordAuditLog } = require('../utils/auditLogger');
 
 const PAYMENT_FIELDS = ['month', 'amount', 'paidOn', 'method', 'reference'];
 
@@ -57,6 +58,15 @@ const createPayment = asyncHandler(async (req, res) => {
   if (data.amount === undefined || data.amount === '') data.amount = tenant.flat?.monthlyRent;
 
   const payment = await Payment.create({ ...data, tenant: tenant._id, flat: tenant.flat?._id });
+
+  await recordAuditLog({
+    actorId: req.user._id,
+    action: 'PAYMENT_RECORDED',
+    resourceType: 'Payment',
+    resourceId: payment._id,
+    metadata: { month: payment.month },
+  });
+
   const saved = await populatePayment(Payment.findById(payment._id));
   res.status(201).json({ payment: saved });
 });

@@ -1,6 +1,7 @@
 const Flat = require('../models/Flat');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { recordAuditLog } = require('../utils/auditLogger');
 
 // Only these fields can be set through the API. isOccupied is managed by tenant assignment (#8).
 const CREATE_FIELDS = ['flatNumber', 'block', 'floor', 'type', 'monthlyRent'];
@@ -19,6 +20,14 @@ function pick(body, fields) {
  */
 const createFlat = asyncHandler(async (req, res) => {
   const flat = await Flat.create(pick(req.body, CREATE_FIELDS));
+
+  await recordAuditLog({
+    actorId: req.user._id,
+    action: 'FLAT_CREATED',
+    resourceType: 'Flat',
+    resourceId: flat._id,
+  });
+
   res.status(201).json({ flat });
 });
 
@@ -74,6 +83,14 @@ const updateFlat = asyncHandler(async (req, res) => {
 
   Object.assign(flat, updates);
   await flat.save();
+
+  await recordAuditLog({
+    actorId: req.user._id,
+    action: 'FLAT_UPDATED',
+    resourceType: 'Flat',
+    resourceId: flat._id,
+  });
+
   res.json({ flat });
 });
 

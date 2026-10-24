@@ -1,16 +1,20 @@
+
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
+
 const app = require('../src/app');
 const User = require('../src/models/User');
+const AuditLog = require('../src/models/AuditLog');
 const db = require('./helpers/db');
 
 beforeAll(async () => {
   await db.connect();
-  await User.init(); // build the unique index on email
+  await User.init(); // Build the unique index on email.
 });
+
 afterEach(() => db.clear());
 afterAll(() => db.close());
 
@@ -21,10 +25,18 @@ const resident = {
   role: 'resident',
 };
 
+const admin = {
+  name: 'Test Admin',
+  email: 'admin@example.com',
+  password: 'admin-password-123',
+  role: 'admin',
+};
+
 describe('User model: password storage (NFR-03)', () => {
   it('stores the password as a bcrypt hash with cost 12, never as plain text', async () => {
     await User.create(resident);
     const saved = await User.findOne({ email: resident.email }).select('+password');
+
     expect(saved.password).not.toBe(resident.password);
     expect(saved.password).toMatch(/^\$2b\$12\$/);
     expect(await saved.comparePassword(resident.password)).toBe(true);
@@ -50,6 +62,7 @@ describe('User model: password storage (NFR-03)', () => {
     await loaded.save();
 
     const after = await User.findById(user._id).select('+password');
+
     expect(after.password).toMatch(/^\$2b\$12\$/);
     expect(await after.comparePassword('a-new-password-1')).toBe(true);
     expect(await after.comparePassword(resident.password)).toBe(false);
@@ -57,22 +70,31 @@ describe('User model: password storage (NFR-03)', () => {
 
   it('never returns the password from queries or JSON', async () => {
     const user = await User.create(resident);
+
     expect(user.toJSON().password).toBeUndefined();
+
     const found = await User.findById(user._id);
     expect(found.password).toBeUndefined();
   });
 
   it('rejects a password shorter than 8 characters', async () => {
-    await expect(User.create({ ...resident, password: 'short' })).rejects.toThrow(/at least 8/);
+    await expect(
+      User.create({ ...resident, password: 'short' }),
+    ).rejects.toThrow(/at least 8/);
   });
 
   it('rejects an unknown role', async () => {
-    await expect(User.create({ ...resident, role: 'superuser' })).rejects.toThrow(/Role must be one of/);
+    await expect(
+      User.create({ ...resident, role: 'superuser' }),
+    ).rejects.toThrow(/Role must be one of/);
   });
 
   it('rejects a duplicate email, ignoring case', async () => {
     await User.create(resident);
-    await expect(User.create({ ...resident, email: 'ASHA@example.com' })).rejects.toMatchObject({ code: 11000 });
+
+    await expect(
+      User.create({ ...resident, email: 'ASHA@example.com' }),
+    ).rejects.toMatchObject({ code: 11000 });
   });
 });
 
@@ -86,6 +108,7 @@ describe('POST /api/auth/login (FR-02)', () => {
       email: resident.email,
       password: resident.password,
     });
+
     expect(res.status).toBe(200);
     expect(res.body.user.email).toBe(resident.email);
     expect(res.body.user.role).toBe('resident');
@@ -94,7 +117,7 @@ describe('POST /api/auth/login (FR-02)', () => {
     const payload = jwt.verify(res.body.token, 'test-secret');
     expect(payload.sub).toBe(res.body.user._id);
     expect(payload.role).toBe('resident');
-    expect(payload.exp - payload.iat).toBe(30 * 60); // NFR-05: 30-minute session
+    expect(payload.exp - payload.iat).toBe(30 * 60);
   });
 
   it('accepts the email in any case and with surrounding spaces', async () => {
@@ -102,17 +125,55 @@ describe('POST /api/auth/login (FR-02)', () => {
       email: '  ASHA@Example.com ',
       password: resident.password,
     });
+
     expect(res.status).toBe(200);
   });
 
-  it('rejects a wrong password with 401', async () => {
+  it('does not create an admin-login audit entry for a resident login', async () => {
     const res = await request(app).post('/api/auth/login').send({
       email: resident.email,
-      password: 'not-the-password',
+      password: resident.password,
     });
+
+    expect(res.status).toBe(200);
+    expect(await AuditLog.countDocuments({ action: 'ADMIN_LOGIN' })).toBe(0);
+  });
+
+  it('records a successful admin login with actor ID and timestamp only', async () => {
+    const adminUser = await User.create(admin);
+
+    const res = await request(app).post('/api/auth/login').send({
+      email: admin.email,
+      password: admin.password,
+    });
+
+    expect(res.status).toBe(200);
+
+    const log = await AuditLog.findOne({ action: 'ADMIN_LOGIN' }).lean();
+
+    expect(log).not.toBeNull();
+    expect(String(log.actorId)).toBe(String(adminUser._id));
+    expect(log.resourceType).toBe('User');
+    expect(log.resourceId).toBe(String(adminUser._id));
+    expect(log.timestamp).toBeDefined();
+
+    const serializedLog = JSON.stringify(log);
+    expect(serializedLog).not.toContain(admin.password);
+    expect(serializedLog).not.toContain(res.body.token);
+    expect(serializedLog).not.toContain('password');
+    expect(serializedLog).not.toContain('token');
+  });
+
+  it('does not create an admin-login audit entry for failed credentials', async () => {
+    await User.create(admin);
+
+    const res = await request(app).post('/api/auth/login').send({
+      email: admin.email,
+      password: 'wrong-password',
+    });
+
     expect(res.status).toBe(401);
-    expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
-    expect(res.body.token).toBeUndefined();
+    expect(await AuditLog.countDocuments({ action: 'ADMIN_LOGIN' })).toBe(0);
   });
 
   it('gives the same answer for an unknown email as for a wrong password', async () => {
@@ -120,22 +181,30 @@ describe('POST /api/auth/login (FR-02)', () => {
       email: resident.email,
       password: 'not-the-password',
     });
+
     const unknownEmail = await request(app).post('/api/auth/login').send({
       email: 'nobody@example.com',
       password: 'whatever-123',
     });
+
     expect(unknownEmail.status).toBe(401);
     expect(unknownEmail.body).toEqual(wrongPassword.body);
   });
 
   it('requires an email', async () => {
-    const res = await request(app).post('/api/auth/login').send({ password: resident.password });
+    const res = await request(app).post('/api/auth/login').send({
+      password: resident.password,
+    });
+
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('email');
   });
 
   it('requires a password', async () => {
-    const res = await request(app).post('/api/auth/login').send({ email: resident.email });
+    const res = await request(app).post('/api/auth/login').send({
+      email: resident.email,
+    });
+
     expect(res.status).toBe(400);
     expect(res.body.error.field).toBe('password');
   });
@@ -145,15 +214,18 @@ describe('POST /api/auth/login (FR-02)', () => {
       email: { $gt: '' },
       password: resident.password,
     });
+
     expect(res.status).toBe(400);
   });
 
   it('refuses to log in a deactivated account with 403', async () => {
     await User.updateOne({ email: resident.email }, { isActive: false });
+
     const res = await request(app).post('/api/auth/login').send({
       email: resident.email,
       password: resident.password,
     });
+
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('ACCOUNT_DISABLED');
   });
