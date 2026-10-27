@@ -8,6 +8,7 @@ import FlatsPage from './pages/admin/FlatsPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
 import RentPage from './pages/admin/RentPage.jsx';
 import VisitorsPage from './pages/admin/VisitorsPage.jsx';
+import DocumentsPage from './pages/admin/DocumentsPage.jsx';
 import ComplaintsPage from './pages/ComplaintsPage.jsx';
 
 // Pages for each role are added as their backlog items are built.
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/admin/tenants" element={<TenantsPage />} />
           <Route path="/admin/rent" element={<RentPage />} />
           <Route path="/admin/visitors" element={<VisitorsPage />} />
+          <Route path="/admin/documents" element={<DocumentsPage />} />
         </Route>
 
         <Route element={<RequireAuth roles={['resident', 'admin', 'maintenance']} />}>

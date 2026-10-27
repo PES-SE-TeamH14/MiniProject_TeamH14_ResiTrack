@@ -168,6 +168,9 @@ describe('authorize: role allowlists (FR-14, SEC-03)', () => {
     ['post', '/api/complaints', ['resident', 'admin']],
     ['get', '/api/complaints', ['resident', 'admin', 'maintenance']],
     ['patch', '/api/complaints/64b000000000000000000000/status', ['admin', 'maintenance']],
+    ['get', '/api/documents', ['admin']],
+    ['post', '/api/documents', ['admin']],
+    ['get', '/api/documents/64b000000000000000000000/file', ['admin']],
   ];
 
   it('every protected route rejects a request with no token', async () => {
