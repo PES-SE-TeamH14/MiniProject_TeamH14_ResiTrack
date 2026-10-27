@@ -28,7 +28,7 @@ const createComplaint = asyncHandler(async (req, res) => {
  * List complaints, newest first.
  */
 const listComplaints = asyncHandler(async (_req, res) => {
-  const complaints = await Complaint.find().sort({ createdAt: -1 });
+  const complaints = await Complaint.find().sort({ createdAt: -1 }).lean();
   res.json({ count: complaints.length, complaints });
 });
 

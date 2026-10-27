@@ -57,7 +57,10 @@ const paymentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Also serves look-ups by tenant (reference field, NFR-08)
 paymentSchema.index({ tenant: 1, month: 1 }, { unique: true });
+// NFR-08 (#23): payment history is listed newest first
+paymentSchema.index({ paidOn: -1, createdAt: -1 });
 
 paymentSchema.statics.METHODS = METHODS;
 paymentSchema.statics.MONTH_PATTERN = MONTH_PATTERN;

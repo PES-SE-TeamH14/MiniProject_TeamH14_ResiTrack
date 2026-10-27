@@ -66,6 +66,10 @@ const complaintSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// NFR-08 (#23): complaints are listed newest first and looked up by flat
+complaintSchema.index({ createdAt: -1 });
+complaintSchema.index({ flatNumber: 1, createdAt: -1 });
+
 complaintSchema.statics.STATUSES = COMPLAINT_STATUSES;
 
 module.exports = mongoose.model('Complaint', complaintSchema);

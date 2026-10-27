@@ -44,6 +44,9 @@ const flatSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// NFR-08 (#23): the flat list is sorted by block, then flat number
+flatSchema.index({ block: 1, flatNumber: 1 });
+
 flatSchema.statics.TYPES = FLAT_TYPES;
 
 module.exports = mongoose.model('Flat', flatSchema);

@@ -57,4 +57,7 @@ const tenantSchema = new mongoose.Schema(
 // An email can belong to only one *current* tenant; past tenants may register again.
 tenantSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { isActive: true } });
 
+// NFR-08 (#23): the tenant list and the monthly rent status filter by isActive and sort by name
+tenantSchema.index({ isActive: 1, name: 1 });
+
 module.exports = mongoose.model('Tenant', tenantSchema);

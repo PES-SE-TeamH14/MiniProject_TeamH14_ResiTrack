@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test": "jest --coverage",
     "create-admin": "node scripts/createAdmin.js",
+    "load-test": "node scripts/perf/runLoadTest.js",
     "seed-demo": "node scripts/seedDemo.js"
   },
   "dependencies": {
