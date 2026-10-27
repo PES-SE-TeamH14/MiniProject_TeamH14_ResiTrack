@@ -25,6 +25,8 @@ export default function RentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [reminders, setReminders] = useState([]);
+  const [sending, setSending] = useState(false);
 
   const loadStatus = useCallback(async () => {
     if (!month) return;
@@ -43,6 +45,43 @@ export default function RentPage() {
   useEffect(() => {
     loadStatus();
   }, [loadStatus]);
+
+  // Reminders already sent for the chosen month (FR-07)
+  const loadReminders = useCallback(async () => {
+    if (!month) return;
+    try {
+      const res = await api.get('/reminders', { params: { month } });
+      setReminders(res.data.reminders);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  }, [month]);
+
+  useEffect(() => {
+    loadReminders();
+  }, [loadReminders]);
+
+  async function sendReminders() {
+    setSending(true);
+    setError('');
+    setMessage('');
+    try {
+      const res = await api.post('/reminders/run', {});
+      const { upcoming, overdue, failed, alreadySent } = res.data.summary;
+      const sent = upcoming + overdue;
+      setMessage(
+        sent === 0 && failed === 0
+          ? `No new reminders to send (${alreadySent} already sent).`
+          : `Sent ${sent} reminder${sent === 1 ? '' : 's'} (${upcoming} upcoming, ${overdue} overdue)` +
+              (failed ? `; ${failed} failed and will be retried.` : '.'),
+      );
+      loadReminders();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSending(false);
+    }
+  }
 
   function startRecording(row) {
     setRecording(row);
@@ -92,6 +131,9 @@ export default function RentPage() {
             }}
           />
         </label>
+        <button type="button" className="btn" onClick={sendReminders} disabled={sending}>
+          {sending ? 'Sending…' : 'Send rent reminders now'}
+        </button>
       </div>
 
       {summary && (
@@ -205,6 +247,40 @@ export default function RentPage() {
                       </button>
                     )}
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h2>Reminders for {monthLabel(month)}</h2>
+      {reminders.length === 0 ? (
+        <p className="muted">No reminders have been sent for this month yet.</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Flat</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Sent on</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reminders.map((r) => (
+                <tr key={r._id}>
+                  <td>{r.tenant?.name || '—'}</td>
+                  <td>{r.flat?.flatNumber || '—'}</td>
+                  <td>
+                    <span className={`badge ${r.type === 'OVERDUE' ? 'badge-red' : 'badge-blue'}`}>
+                      {r.type === 'OVERDUE' ? 'Overdue' : 'Upcoming'}
+                    </span>
+                  </td>
+                  <td>{r.status === 'sent' ? 'Sent' : r.status === 'failed' ? 'Failed' : 'Sending'}</td>
+                  <td>{formatDate(r.sentAt)}</td>
                 </tr>
               ))}
             </tbody>

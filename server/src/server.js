@@ -17,6 +17,11 @@ function startWorker() {
       const who = cluster.isWorker ? ` (worker ${process.pid})` : '';
       console.log(`ResiTrack API listening on http://localhost:${PORT}${who}`);
     });
+
+    // FR-07 (#17): the daily rent-reminder job runs in one process only (the first worker, if clustered)
+    if (!cluster.isWorker || cluster.worker.id === 1) {
+      require('./services/reminderScheduler').startReminderScheduler();
+    }
   }
 
   start().catch((err) => {
