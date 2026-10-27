@@ -22,8 +22,8 @@ app.use(
 // Body parsing
 app.use(express.json({ limit: '1mb' }));
 
-// Request logging (skipped while running tests)
-if (process.env.NODE_ENV !== 'test') {
+// Request logging (skipped while running tests, and during the load test: REQUEST_LOGS=off)
+if (process.env.NODE_ENV !== 'test' && process.env.REQUEST_LOGS !== 'off') {
   app.use(morgan('dev'));
 }
 

@@ -37,7 +37,7 @@ const createVisitor = asyncHandler(async (req, res) => {
  * List visitor entries, newest first.
  */
 const listVisitors = asyncHandler(async (_req, res) => {
-  const visitors = await Visitor.find().sort({ createdAt: -1 });
+  const visitors = await Visitor.find().sort({ createdAt: -1 }).lean();
   res.json({ count: visitors.length, visitors });
 });
 

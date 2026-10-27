@@ -88,7 +88,7 @@ const listPayments = asyncHandler(async (req, res) => {
     filter.tenant = tenant;
   }
 
-  const payments = await populatePayment(Payment.find(filter).sort({ paidOn: -1, createdAt: -1 }));
+  const payments = await populatePayment(Payment.find(filter).sort({ paidOn: -1, createdAt: -1 })).lean();
   res.json({ count: payments.length, payments });
 });
 
@@ -110,9 +110,10 @@ const getRentStatus = asyncHandler(async (req, res) => {
     leaseEnd: { $gte: monthStart },
   })
     .populate('flat', 'flatNumber block monthlyRent')
-    .sort({ name: 1 });
+    .sort({ name: 1 })
+    .lean();
 
-  const payments = await Payment.find({ month, tenant: { $in: tenants.map((t) => t._id) } });
+  const payments = await Payment.find({ month, tenant: { $in: tenants.map((t) => t._id) } }).lean();
   const paymentByTenant = new Map(payments.map((p) => [String(p.tenant), p]));
 
   const rows = tenants.map((tenant) => {

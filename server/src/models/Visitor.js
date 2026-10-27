@@ -32,4 +32,8 @@ const visitorSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// NFR-08 (#23): visitors are listed newest first and looked up by flat
+visitorSchema.index({ createdAt: -1 });
+visitorSchema.index({ flatNumber: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Visitor', visitorSchema);

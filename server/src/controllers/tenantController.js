@@ -81,7 +81,7 @@ const listTenants = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'INVALID_QUERY', 'status must be current, past or all.', 'status');
   }
 
-  const tenants = await Tenant.find(filter).populate('flat', FLAT_SUMMARY).sort({ name: 1 });
+  const tenants = await Tenant.find(filter).populate('flat', FLAT_SUMMARY).sort({ name: 1 }).lean();
   res.json({ count: tenants.length, tenants });
 });
 

@@ -9,7 +9,8 @@
     "dev": "nodemon src/server.js",
     "lint": "eslint .",
     "test": "jest --coverage",
-    "create-admin": "node scripts/createAdmin.js"
+    "create-admin": "node scripts/createAdmin.js",
+    "load-test": "node scripts/perf/runLoadTest.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
