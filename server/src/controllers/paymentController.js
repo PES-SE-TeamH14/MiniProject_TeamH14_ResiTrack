@@ -4,6 +4,7 @@ const Tenant = require('../models/Tenant');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { recordAuditLog } = require('../utils/auditLogger');
+const { buildReceiptPdf, receiptNumber, receiptFileName } = require('../services/receiptService');
 
 const PAYMENT_FIELDS = ['month', 'amount', 'paidOn', 'method', 'reference'];
 
@@ -148,4 +149,47 @@ const getPayment = asyncHandler(async (req, res) => {
   res.json({ payment });
 });
 
-module.exports = { createPayment, listPayments, getRentStatus, getPayment };
+/**
+ * GET /api/payments/mine — Resident. The signed-in resident's own payments, newest first.
+ * A resident is matched to their tenant record(s) by email address.
+ */
+const listMyPayments = asyncHandler(async (req, res) => {
+  const tenants = await Tenant.find({ email: req.user.email }).select('_id').lean();
+  const payments = await populatePayment(
+    Payment.find({ tenant: { $in: tenants.map((t) => t._id) } }).sort({ paidOn: -1, createdAt: -1 }),
+  ).lean();
+  res.json({ count: payments.length, payments });
+});
+
+/**
+ * GET /api/payments/:id/receipt — Admin, or the Resident who paid (FR-15, UC-15).
+ * Sends the rent receipt as a PDF download. A resident asking for someone else's receipt
+ * gets 404, so they cannot tell whether that payment exists.
+ */
+const getReceipt = asyncHandler(async (req, res) => {
+  const payment = await populatePayment(Payment.findById(req.params.id));
+  if (!payment) throw new ApiError(404, 'NOT_FOUND', 'Payment not found.');
+
+  if (req.user.role === 'resident' && payment.tenant?.email !== req.user.email) {
+    throw new ApiError(404, 'NOT_FOUND', 'Payment not found.');
+  }
+
+  await recordAuditLog({
+    actorId: req.user._id,
+    action: 'RECEIPT_DOWNLOADED',
+    resourceType: 'Payment',
+    resourceId: payment._id,
+    metadata: { receiptNumber: receiptNumber(payment) },
+  });
+
+  const pdf = buildReceiptPdf(payment);
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `attachment; filename="${receiptFileName(payment)}"`,
+    'Content-Length': pdf.length,
+    'Cache-Control': 'no-store',
+  });
+  res.send(pdf);
+});
+
+module.exports = { createPayment, listPayments, getRentStatus, getPayment, listMyPayments, getReceipt };
