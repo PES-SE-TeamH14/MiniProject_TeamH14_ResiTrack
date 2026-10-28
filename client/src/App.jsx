@@ -10,6 +10,7 @@ import RentPage from './pages/admin/RentPage.jsx';
 import VisitorsPage from './pages/admin/VisitorsPage.jsx';
 import DocumentsPage from './pages/admin/DocumentsPage.jsx';
 import ComplaintsPage from './pages/ComplaintsPage.jsx';
+import MyReceiptsPage from './pages/MyReceiptsPage.jsx';
 
 // Pages for each role are added as their backlog items are built.
 // Page access mirrors the API's role rules (FR-14).
@@ -26,6 +27,10 @@ export default function App() {
           <Route path="/admin/rent" element={<RentPage />} />
           <Route path="/admin/visitors" element={<VisitorsPage />} />
           <Route path="/admin/documents" element={<DocumentsPage />} />
+        </Route>
+
+        <Route element={<RequireAuth roles={['resident']} />}>
+          <Route path="/receipts" element={<MyReceiptsPage />} />
         </Route>
 
         <Route element={<RequireAuth roles={['resident', 'admin', 'maintenance']} />}>

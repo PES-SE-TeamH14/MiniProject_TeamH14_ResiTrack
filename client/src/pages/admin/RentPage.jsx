@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api, { getErrorMessage } from '../../api/client.js';
+import { downloadReceipt } from '../../api/receipts.js';
 
 const METHODS = ['UPI', 'Cash', 'Bank transfer', 'Cheque', 'Other'];
 
@@ -80,6 +81,15 @@ export default function RentPage() {
       setError(getErrorMessage(err));
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleReceipt(row) {
+    setError('');
+    try {
+      await downloadReceipt({ ...row.payment, flat: row.flat });
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   }
 
@@ -241,9 +251,13 @@ export default function RentPage() {
                   <td>{row.payment ? rupees(row.payment.amount) : '—'}</td>
                   <td>{row.payment ? row.payment.method : '—'}</td>
                   <td className="actions">
-                    {row.status === 'Unpaid' && (
+                    {row.status === 'Unpaid' ? (
                       <button type="button" className="btn btn-small" onClick={() => startRecording(row)}>
                         Record payment
+                      </button>
+                    ) : (
+                      <button type="button" className="btn btn-small" onClick={() => handleReceipt(row)}>
+                        Receipt (PDF)
                       </button>
                     )}
                   </td>

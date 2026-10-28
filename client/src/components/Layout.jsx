@@ -11,6 +11,7 @@ const LINKS = [
   { to: '/admin/visitors', label: 'Visitors', roles: ['admin'] },
   { to: '/admin/documents', label: 'Documents', roles: ['admin'] },
   { to: '/complaints', label: 'Complaints', roles: ['resident', 'admin', 'maintenance'] },
+  { to: '/receipts', label: 'My receipts', roles: ['resident'] },
 ];
 
 export default function Layout() {
