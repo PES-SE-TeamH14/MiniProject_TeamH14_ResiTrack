@@ -7,6 +7,7 @@ const paymentRoutes = require('./paymentRoutes');
 const visitorRoutes = require('./visitorRoutes');
 const complaintRoutes = require('./complaintRoutes');
 const auditLogRoutes = require('./auditLogRoutes');
+const noticeRoutes = require('./noticeRoutes');
 const documentRoutes = require('./documentRoutes');
 const reminderRoutes = require('./reminderRoutes');
 const { protect } = require('../middleware/auth');
@@ -25,6 +26,7 @@ router.use('/payments', protect, paymentRoutes); // FR-06 (#9)
 router.use('/visitors', protect, visitorRoutes); // FR-08 (#13)
 router.use('/complaints', protect, complaintRoutes); // FR-13 (#14)
 router.use('/audit-logs', protect, auditLogRoutes);
+router.use('/notices', protect, noticeRoutes);
 router.use('/documents', protect, documentRoutes); // FR-11 (#21)
 router.use('/reminders', protect, reminderRoutes); // FR-07 (#17)
 
