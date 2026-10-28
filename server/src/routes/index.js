@@ -7,6 +7,7 @@ const paymentRoutes = require('./paymentRoutes');
 const visitorRoutes = require('./visitorRoutes');
 const complaintRoutes = require('./complaintRoutes');
 const auditLogRoutes = require('./auditLogRoutes');
+const noticeRoutes = require('./noticeRoutes');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.use('/payments', protect, paymentRoutes); // FR-06 (#9)
 router.use('/visitors', protect, visitorRoutes); // FR-08 (#13)
 router.use('/complaints', protect, complaintRoutes); // FR-13 (#14)
 router.use('/audit-logs', protect, auditLogRoutes);
+router.use('/notices', protect, noticeRoutes);
 
 module.exports = router;
