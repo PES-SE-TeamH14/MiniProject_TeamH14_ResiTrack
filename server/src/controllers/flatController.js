@@ -50,7 +50,7 @@ const listFlats = asyncHandler(async (req, res) => {
     filter.isOccupied = false;
   }
 
-  const flats = await Flat.find(filter).sort({ block: 1, flatNumber: 1 });
+  const flats = await Flat.find(filter).sort({ block: 1, flatNumber: 1 }).lean();
   res.json({ count: flats.length, flats });
 });
 

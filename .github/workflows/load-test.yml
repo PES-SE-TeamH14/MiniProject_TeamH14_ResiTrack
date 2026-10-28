@@ -1,0 +1,47 @@
+name: Load test
+
+# NFR-01 (#22) / NFR-08 (#23): 200 concurrent users against 500 seeded tenants.
+# Runs when the load-test files change, or by hand from the Actions tab.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+    paths:
+      - "7-Testing-Tools/load-test/**"
+      - "server/scripts/perf/**"
+      - ".github/workflows/load-test.yml"
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run load test (200 users, 500 tenants)
+        working-directory: server
+        run: npm run load-test
+
+      - name: Add report to the run summary
+        if: always()
+        run: cat 7-Testing-Tools/load-test/results/report.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results
+          path: 7-Testing-Tools/load-test/results/
