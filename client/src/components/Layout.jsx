@@ -8,13 +8,13 @@ const LINKS = [
   { to: '/admin/flats', label: 'Flats', roles: ['admin'] },
   { to: '/admin/tenants', label: 'Tenants', roles: ['admin'] },
   { to: '/admin/rent', label: 'Rent', roles: ['admin'] },
+  { to: '/owner/summary', label: 'Financial summary', roles: ['owner', 'admin'] },
   { to: '/admin/visitors', label: 'Visitors', roles: ['admin'] },
   { to: '/admin/documents', label: 'Documents', roles: ['admin'] },
   { to: '/complaints', label: 'Complaints', roles: ['resident', 'admin', 'maintenance'] },
   { to: '/receipts', label: 'My receipts', roles: ['resident'] },
   { to: '/maintenance-requests', label: 'Maintenance', roles: ['resident'] },
   { to: '/notices', label: 'Notices', roles: ['resident', 'admin'] },
-  { to: '/owner/summary', label: 'Financial summary', roles: ['owner', 'admin'] },
 ];
 
 export default function Layout() {

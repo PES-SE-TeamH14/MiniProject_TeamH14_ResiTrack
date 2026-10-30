@@ -308,13 +308,6 @@ input:disabled {
   font-weight: 700;
 }
 
-/* ---------- Login ---------- */
-
-.login-card {
-  max-width: 420px;
-  grid-template-columns: 1fr;
-}
-
 /* ---------- Financial summary (FR-10) ---------- */
 
 .section-title {
@@ -397,4 +390,11 @@ input:disabled {
 
 .trend-label {
   font-size: 0.8rem;
+}
+
+/* ---------- Login ---------- */
+
+.login-card {
+  max-width: 420px;
+  grid-template-columns: 1fr;
 }
