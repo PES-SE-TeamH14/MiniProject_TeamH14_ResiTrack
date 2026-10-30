@@ -123,12 +123,17 @@ body {
 }
 
 input,
-select {
+select,
+textarea {
   font: inherit;
   padding: 7px 9px;
   border: 1px solid #d0d7de;
   border-radius: 6px;
   background: #fff;
+}
+
+textarea {
+  resize: vertical;
 }
 
 .form-note {
@@ -313,4 +318,57 @@ input:disabled {
 .login-card {
   max-width: 420px;
   grid-template-columns: 1fr;
+}
+
+/* ---------- Small screens (NFR-06: usable at 375px) ---------- */
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 10px 12px;
+  }
+
+  /* The tagline wraps onto its own line and pushes the page down; the brand is enough */
+  .tagline {
+    display: none;
+  }
+
+  .nav-user {
+    margin-left: 0;
+  }
+
+  .app-main {
+    padding: 16px 12px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 6px 8px;
+  }
+
+  /* Keep row buttons on screen: the actions column stays pinned to the right
+     edge while the rest of a wide table scrolls sideways */
+  .table td.actions,
+  .table:has(td.actions) th:last-child {
+    position: sticky;
+    right: 0;
+    box-shadow: -6px 0 6px -6px rgba(31, 35, 40, 0.35);
+  }
+
+  .table td.actions {
+    background: #fff;
+    white-space: normal;
+  }
+
+  .table td.actions .btn {
+    display: block;
+    width: 100%;
+  }
+
+  .actions .btn + .btn {
+    margin: 4px 0 0;
+  }
 }

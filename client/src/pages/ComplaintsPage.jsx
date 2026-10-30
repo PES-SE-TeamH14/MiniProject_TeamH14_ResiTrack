@@ -198,7 +198,7 @@ export default function ComplaintsPage() {
                       {complaint.status}
                     </span>
                   </td>
-                  <td>
+                  <td className="actions">
                     <button
                       type="button"
                       className="btn btn-small"
