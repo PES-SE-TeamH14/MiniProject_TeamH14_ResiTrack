@@ -51,11 +51,18 @@ const createMaintenanceRequest = asyncHandler(async (req, res) => {
 });
 
 /**
- * GET /api/maintenance-requests
+ * GET /api/maintenance-requests[?status=Open]
  * Residents see only their own requests; admin and maintenance staff see all.
+ * The optional status filter serves the FR-09 Kanban board (SAD §3.2 "List/filter").
  */
 const listMaintenanceRequests = asyncHandler(async (req, res) => {
   const filter = req.user.role === 'resident' ? { resident: req.user._id } : {};
+  if (req.query.status !== undefined) {
+    if (!STATUSES.includes(req.query.status)) {
+      throw new ApiError(400, 'INVALID_STATUS', `Status must be one of: ${STATUSES.join(', ')}.`, 'status');
+    }
+    filter.status = req.query.status;
+  }
   const requests = await MaintenanceRequest.find(filter)
     .sort({ createdAt: -1 })
     .populate('resident', 'name email')

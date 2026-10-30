@@ -229,3 +229,37 @@ describe('PATCH /api/maintenance-requests/:id', () => {
     expect(malformed.status).toBe(404);
   });
 });
+
+// FR-09 (#24, UC-09, TC-09): the admin Kanban board lists and filters requests by status
+describe('GET /api/maintenance-requests?status=', () => {
+  it('filters by status for the Kanban board', async () => {
+    const resident = await loginAs('resident');
+    await MaintenanceRequest.create({ ...sample, resident: resident.user._id });
+    await MaintenanceRequest.create({ ...sample, resident: resident.user._id, status: 'In Progress' });
+    await MaintenanceRequest.create({ ...sample, resident: resident.user._id, status: 'Resolved' });
+
+    const admin = await loginAs('admin');
+    const response = await as(app, admin.header).get('/api/maintenance-requests?status=In%20Progress');
+    expect(response.status).toBe(200);
+    expect(response.body.count).toBe(1);
+    expect(response.body.requests[0].status).toBe('In Progress');
+    expect(response.body.requests[0].resident.name).toBeDefined();
+  });
+
+  it('rejects an unknown status filter', async () => {
+    const admin = await loginAs('admin');
+    const response = await as(app, admin.header).get('/api/maintenance-requests?status=Closed');
+    expect(response.status).toBe(400);
+    expect(response.body.error.field).toBe('status');
+  });
+
+  it('still limits residents to their own requests when filtering', async () => {
+    const residentOne = await loginAs('resident');
+    const residentTwo = await loginAs('resident');
+    await MaintenanceRequest.create({ ...sample, resident: residentOne.user._id });
+    await MaintenanceRequest.create({ ...sample, resident: residentTwo.user._id });
+
+    const response = await as(app, residentOne.header).get('/api/maintenance-requests?status=Open');
+    expect(response.body.count).toBe(1);
+  });
+});
