@@ -35,6 +35,19 @@ const maintenanceRequestSchema = new mongoose.Schema(
       enum: { values: STATUSES, message: `Status must be one of: ${STATUSES.join(', ')}` },
       default: 'Open',
     },
+    // FR-05: every status change, with who made it and when
+    statusHistory: {
+      type: [
+        {
+          status: { type: String, enum: STATUSES, required: true },
+          changedAt: { type: Date, default: Date.now },
+          changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        },
+      ],
+      default: function initialStatusHistory() {
+        return [{ status: this.status || 'Open', changedBy: this.resident }];
+      },
+    },
   },
   { timestamps: true },
 );

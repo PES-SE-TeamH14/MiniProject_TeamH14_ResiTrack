@@ -33,6 +33,9 @@ export default function App() {
 
         <Route element={<RequireAuth roles={['resident']} />}>
           <Route path="/receipts" element={<MyReceiptsPage />} />
+        </Route>
+
+        <Route element={<RequireAuth roles={['resident', 'maintenance']} />}>
           <Route path="/maintenance-requests" element={<MaintenanceRequestsPage />} />
         </Route>
 

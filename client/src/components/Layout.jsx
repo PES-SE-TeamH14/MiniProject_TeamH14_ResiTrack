@@ -12,7 +12,7 @@ const LINKS = [
   { to: '/admin/documents', label: 'Documents', roles: ['admin'] },
   { to: '/complaints', label: 'Complaints', roles: ['resident', 'admin', 'maintenance'] },
   { to: '/receipts', label: 'My receipts', roles: ['resident'] },
-  { to: '/maintenance-requests', label: 'Maintenance', roles: ['resident'] },
+  { to: '/maintenance-requests', label: 'Maintenance', roles: ['resident', 'maintenance'] },
   { to: '/notices', label: 'Notices', roles: ['resident', 'admin'] },
 ];
 

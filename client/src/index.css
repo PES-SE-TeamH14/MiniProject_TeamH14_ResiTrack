@@ -237,6 +237,12 @@ input:disabled {
   font-size: 0.85rem;
 }
 
+/* Long free text (e.g. a request description) wraps instead of stretching the table */
+.table td.cell-wrap {
+  white-space: normal;
+  min-width: 200px;
+}
+
 .row-inactive td {
   color: #8c959f;
 }
