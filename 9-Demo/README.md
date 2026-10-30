@@ -44,6 +44,10 @@ The video was recorded with an automated browser script (Playwright) driving the
 
 # Sprint-2 demo, documentation and code freeze (#27, DEL-02)
 
+**Video:** [Sprint2_Demo.mp4](Sprint2_Demo.mp4) (1 min 51 s)
+
+Recorded on 30 Oct 2026 from `master` after PRs #52–#59 were merged, running locally with the `npm run seed-demo` data plus two maintenance requests raised by the demo resident. As with the Sprint-1 video, an automated browser script (Playwright) drove the real app, so every click and request is genuine; the captions name the backlog item shown. It follows the shot list below, in a slightly different order.
+
 ## Before recording
 
 Merge the open Sprint-2 pull requests first, so the video shows the final product. Then, from an up-to-date `master`:
@@ -75,7 +79,6 @@ Raise two or three maintenance requests as the resident before you start recordi
 | 10 | resident | Browser narrowed to 375px (DevTools device mode): menus and tables still usable | NFR-06 #25 |
 | 11 | owner | Financial summary, if FR-10 is merged | FR-10 #28 |
 
-Save the video as `9-Demo/Sprint2_Demo.mp4` and add a link to it at the top of this section.
 
 ## Documentation checklist
 
