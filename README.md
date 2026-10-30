@@ -79,7 +79,7 @@ A tenant can only be placed in a vacant, active flat, so add the flat first. The
 | Folder | Command | What it does |
 |---|---|---|
 | `server` | `npm run dev` | Start the API with auto-reload |
-| `server` | `npm test` | Run unit/API tests with coverage (Jest + Supertest) |
+| `server` | `npm test` | Run unit/API tests with coverage (Jest + Supertest); fails below 60% (NFR-09) |
 | `server` | `npm run lint` | Check code style (ESLint) |
 | `server` | `npm run create-admin` | Create the first admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` |
 | `server` | `npm run seed-demo` | Add demo logins (one per role) and sample data |
