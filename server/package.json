@@ -11,7 +11,8 @@
     "test": "jest --coverage",
     "create-admin": "node scripts/createAdmin.js",
     "load-test": "node scripts/perf/runLoadTest.js",
-    "seed-demo": "node scripts/seedDemo.js"
+    "seed-demo": "node scripts/seedDemo.js",
+    "check-tls": "node scripts/checkTls.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

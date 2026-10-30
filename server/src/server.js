@@ -1,10 +1,27 @@
 require('dotenv').config();
 
 const cluster = require('cluster');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
 
 // NFR-01 (#22): one Node process only uses one CPU core. WEB_CONCURRENCY=n starts n worker
 // processes that share the same port, so the API can use n cores. Default: 1 (no cluster).
 const WORKERS = Math.max(1, Math.floor(Number(process.env.WEB_CONCURRENCY)) || 1);
+
+// NFR-04 (#19): on a PaaS the platform provides HTTPS and this stays plain HTTP behind it.
+// To serve HTTPS directly (own VM, or local testing), set TLS_KEY_PATH and TLS_CERT_PATH.
+// Only TLS 1.2 and newer is accepted.
+function createServer(app) {
+  const { TLS_KEY_PATH, TLS_CERT_PATH } = process.env;
+  if (TLS_KEY_PATH && TLS_CERT_PATH) {
+    return https.createServer(
+      { key: fs.readFileSync(TLS_KEY_PATH), cert: fs.readFileSync(TLS_CERT_PATH), minVersion: 'TLSv1.2' },
+      app,
+    );
+  }
+  return http.createServer(app);
+}
 
 function startWorker() {
   const app = require('./app');
@@ -13,9 +30,11 @@ function startWorker() {
 
   async function start() {
     await connectDB(process.env.MONGODB_URI);
-    app.listen(PORT, () => {
+    const server = createServer(app);
+    server.listen(PORT, () => {
       const who = cluster.isWorker ? ` (worker ${process.pid})` : '';
-      console.log(`ResiTrack API listening on http://localhost:${PORT}${who}`);
+      const scheme = server instanceof https.Server ? 'https' : 'http';
+      console.log(`ResiTrack API listening on ${scheme}://localhost:${PORT}${who}`);
     });
 
     // FR-07 (#17): the daily rent-reminder job runs in one process only (the first worker, if clustered)

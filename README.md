@@ -88,6 +88,10 @@ client/src/
 
 All API errors use one JSON shape: `{ "error": { "code", "message", "field?" } }`.
 
+## Deployment
+
+The API and the client are deployed on Render's free tier with MongoDB Atlas; `render.yaml` describes both services. All traffic is HTTPS (TLS 1.2+); plain HTTP is redirected or rejected. Availability is watched by an external uptime monitor. Steps, environment variables and how to verify NFR-02 and NFR-04 are in [8-Deployment/DEPLOYMENT.md](8-Deployment/DEPLOYMENT.md).
+
 ## Repository Structure
 
 | Folder | Contents |
