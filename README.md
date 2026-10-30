@@ -55,6 +55,25 @@ npm run dev               # http://localhost:5173
 
 The home page shows whether the API and the database are reachable.
 
+**3. First administrator**
+
+Nobody can log in until an admin account exists. In `server/.env` set `ADMIN_EMAIL` and `ADMIN_PASSWORD` (and optionally `ADMIN_NAME`), then:
+
+```bash
+cd server
+npm run create-admin
+```
+
+Log in at http://localhost:5173/login with that email and password. For sample data and one login per role instead, run `npm run seed-demo`.
+
+### First steps for a new admin (NFR-07)
+
+1. Log in. You land on **Flats**.
+2. Add a flat: flat number, block, floor, type and monthly rent, then **Add flat**.
+3. Open **Tenants** and register a tenant: name, email, phone, the vacant flat, lease start and end, then **Register tenant**.
+
+A tenant can only be placed in a vacant, active flat, so add the flat first. The Tenants page links back to Flats when there is none.
+
 ### Useful scripts
 
 | Folder | Command | What it does |
@@ -62,6 +81,8 @@ The home page shows whether the API and the database are reachable.
 | `server` | `npm run dev` | Start the API with auto-reload |
 | `server` | `npm test` | Run unit/API tests with coverage (Jest + Supertest) |
 | `server` | `npm run lint` | Check code style (ESLint) |
+| `server` | `npm run create-admin` | Create the first admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` |
+| `server` | `npm run seed-demo` | Add demo logins (one per role) and sample data |
 | `client` | `npm run dev` | Start the React app |
 | `client` | `npm run build` | Production build into `client/dist` |
 | `client` | `npm run lint` | Check code style (ESLint) |
