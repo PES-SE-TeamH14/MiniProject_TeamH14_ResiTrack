@@ -19,3 +19,8 @@ coverage/
 .idea/
 .DS_Store
 *.log
+
+# Local test certificates (never commit private keys)
+server/certs/
+*.pem
+*.key

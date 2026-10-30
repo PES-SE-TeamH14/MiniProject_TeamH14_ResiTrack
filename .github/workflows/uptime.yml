@@ -1,0 +1,46 @@
+name: Uptime check
+
+# NFR-02 (#20): extra availability check next to the external monitor described in 8-Deployment/DEPLOYMENT.md.
+# Needs two repository variables (Settings > Secrets and variables > Actions > Variables):
+#   API_URL     e.g. https://resitrack-api.onrender.com
+#   CLIENT_URL  e.g. https://resitrack-client.onrender.com
+# Without them the job does nothing. A failed run sends the usual GitHub failure e-mail.
+# GitHub may delay scheduled runs by a few minutes, so the external monitor stays the official uptime number.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      API_URL: ${{ vars.API_URL }}
+      CLIENT_URL: ${{ vars.CLIENT_URL }}
+    steps:
+      - name: Check the API and the client
+        run: |
+          if [ -z "$API_URL" ] || [ -z "$CLIENT_URL" ]; then
+            echo "::notice::API_URL / CLIENT_URL repository variables are not set, skipping."
+            exit 0
+          fi
+
+          fail=0
+
+          # Free-tier services sleep when idle, so allow a slow first response
+          body=$(curl -sS --max-time 60 --retry 2 --retry-delay 10 -w '\n%{http_code} %{time_total}s' "$API_URL/api/health") || fail=1
+          echo "API: $body"
+          echo "$body" | grep -q '"status":"ok"' || fail=1
+          echo "$body" | grep -q '"database":"connected"' || { echo "Database is not connected"; fail=1; }
+
+          client=$(curl -sS --max-time 60 --retry 2 --retry-delay 10 -o /dev/null -w '%{http_code} %{time_total}s' "$CLIENT_URL/") || fail=1
+          echo "Client: $client"
+          case "$client" in 200*) ;; *) fail=1 ;; esac
+
+          # Plain HTTP must not serve the API (NFR-04)
+          plain=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code} %{redirect_url}' "http://${API_URL#https://}/api/tenants" || true)
+          echo "Plain HTTP: $plain"
+          case "$plain" in 301\ https://*|302\ https://*|307\ https://*|308\ https://*|426*|403*) ;; *) echo "Plain HTTP is not redirected or rejected"; fail=1 ;; esac
+
+          exit $fail

@@ -1,0 +1,60 @@
+# Render Blueprint for ResiTrack (NFR-02 #20, NFR-04 #19).
+# Render dashboard: New > Blueprint > pick this repository. Values marked "sync: false" are asked for
+# once in the dashboard and are never stored in Git.
+services:
+  # Express API
+  - type: web
+    name: resitrack-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: NODE_ENV
+        value: production
+      # HTTPS only: Render terminates TLS, Express redirects or rejects anything that arrives as HTTP
+      - key: FORCE_HTTPS
+        value: "true"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: MONGODB_URI
+        sync: false
+      # Exact URL of the static site below, no trailing slash, e.g. https://resitrack-client.onrender.com
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 30m
+      - key: BCRYPT_ROUNDS
+        value: "12"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: REMINDERS_ENABLED
+        value: "true"
+      - key: REMINDER_TIMEZONE
+        value: Asia/Kolkata
+
+  # React client (static files)
+  - type: web
+    name: resitrack-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeployTrigger: commit
+    envVars:
+      # Full API URL including /api, e.g. https://resitrack-api.onrender.com/api
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      # React Router handles every path in the browser, so unknown paths must serve index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
