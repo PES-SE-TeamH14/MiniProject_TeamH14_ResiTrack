@@ -45,7 +45,7 @@ export default function App() {
           <Route path="/complaints" element={<ComplaintsPage />} />
         </Route>
 
-        <Route element={<RequireAuth roles={['resident', 'admin']} />}>
+        <Route element={<RequireAuth roles={['resident', 'admin', 'maintenance', 'owner']} />}>
           <Route path="/notices" element={<NoticesPage />} />
         </Route>
 

@@ -58,6 +58,20 @@ describe('community notices (FR-03)', () => {
     expect(JSON.stringify(res.body)).not.toContain('Hidden');
   });
 
+  it.each(['maintenance', 'owner'])('lets a %s read notices but not publish them', async (role) => {
+    const admin = await loginAs('admin');
+    const user = await loginAs(role);
+    await Notice.create({ title: 'Lift service', message: 'Lift B is off on Sunday.', publishedBy: admin.user._id });
+
+    const read = await as(app, user.header).get('/api/notices');
+    expect(read.status).toBe(200);
+    expect(read.body.notices.map((notice) => notice.title)).toEqual(['Lift service']);
+
+    const publish = await as(app, user.header).post('/api/notices').send({ title: 'No', message: 'Not allowed.' });
+    expect(publish.status).toBe(403);
+    expect(await Notice.countDocuments()).toBe(1);
+  });
+
   it('requires login to view notices', async () => {
     const request = require('supertest');
     const res = await request(app).get('/api/notices');
