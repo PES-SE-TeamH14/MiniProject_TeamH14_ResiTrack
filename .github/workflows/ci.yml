@@ -38,3 +38,24 @@ jobs:
           if [ "$found" = 0 ]; then
             echo "No package.json found yet (scaffold not merged), nothing to build."
           fi
+
+      # NFR-09 (#29): npm test fails the build if server coverage drops below 60%
+      # (coverageThreshold in server/package.json). These steps publish the numbers.
+      - name: Coverage summary
+        if: always() && hashFiles('server/coverage/coverage-summary.json') != ''
+        run: |
+          node -e '
+            const t = require("./server/coverage/coverage-summary.json").total;
+            const row = (k) => `| ${k} | ${t[k].pct}% | ${t[k].covered} / ${t[k].total} |`;
+            console.log("### Server test coverage (NFR-09, minimum 60%)\n");
+            console.log("| Metric | Coverage | Covered |\n|---|---|---|");
+            ["statements", "branches", "functions", "lines"].forEach((k) => console.log(row(k)));
+          ' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always() && hashFiles('server/coverage/lcov.info') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: server/coverage/
+          retention-days: 14

@@ -60,7 +60,7 @@ The home page shows whether the API and the database are reachable.
 | Folder | Command | What it does |
 |---|---|---|
 | `server` | `npm run dev` | Start the API with auto-reload |
-| `server` | `npm test` | Run unit/API tests with coverage (Jest + Supertest) |
+| `server` | `npm test` | Run unit/API tests with coverage (Jest + Supertest); fails below 60% (NFR-09) |
 | `server` | `npm run lint` | Check code style (ESLint) |
 | `client` | `npm run dev` | Start the React app |
 | `client` | `npm run build` | Production build into `client/dist` |
