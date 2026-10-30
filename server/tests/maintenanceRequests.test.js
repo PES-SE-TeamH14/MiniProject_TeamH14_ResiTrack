@@ -2,6 +2,7 @@ process.env.NODE_ENV = 'test';
 
 const app = require('../src/app');
 const MaintenanceRequest = require('../src/models/MaintenanceRequest');
+const AuditLog = require('../src/models/AuditLog');
 const db = require('./helpers/db');
 const { loginAs, as } = require('./helpers/auth');
 
@@ -122,5 +123,109 @@ describe('GET /api/maintenance-requests', () => {
     const owner = await loginAs('owner');
     const response = await as(app, owner.header).get('/api/maintenance-requests');
     expect(response.status).toBe(403);
+  });
+});
+
+// FR-05 (#12, UC-05, TC-05): maintenance staff update a request's status
+describe('PATCH /api/maintenance-requests/:id', () => {
+  async function createRequest() {
+    const resident = await loginAs('resident');
+    const created = await as(app, resident.header).post('/api/maintenance-requests').send(sample);
+    return { resident, request: created.body.request };
+  }
+
+  it('lets maintenance staff change the status and saves it with history', async () => {
+    const { resident, request } = await createRequest();
+    const staff = await loginAs('maintenance');
+
+    const response = await as(app, staff.header)
+      .patch(`/api/maintenance-requests/${request._id}`)
+      .send({ status: 'In Progress' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.request.status).toBe('In Progress');
+    expect(response.body.message).toMatch(/In Progress/);
+
+    const saved = await MaintenanceRequest.findById(request._id);
+    expect(saved.status).toBe('In Progress');
+    expect(saved.statusHistory.map((entry) => entry.status)).toEqual(['Open', 'In Progress']);
+    expect(String(saved.statusHistory[1].changedBy)).toBe(String(staff.user._id));
+
+    // The resident sees the new status on their next fetch (the page polls every 3 s)
+    const residentView = await as(app, resident.header).get('/api/maintenance-requests');
+    expect(residentView.body.requests[0].status).toBe('In Progress');
+  });
+
+  it('lets an admin move a request (FR-09 Kanban) and audits it', async () => {
+    const { request } = await createRequest();
+    const admin = await loginAs('admin');
+
+    const response = await as(app, admin.header)
+      .patch(`/api/maintenance-requests/${request._id}`)
+      .send({ status: 'Resolved' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.request.status).toBe('Resolved');
+    const log = await AuditLog.findOne({ action: 'MAINTENANCE_STATUS_UPDATED' });
+    expect(log.metadata).toEqual({ from: 'Open', to: 'Resolved' });
+  });
+
+  it.each(['resident', 'owner'])('returns 403 for a %s and leaves the status unchanged', async (role) => {
+    const { request } = await createRequest();
+    const user = await loginAs(role);
+
+    const response = await as(app, user.header)
+      .patch(`/api/maintenance-requests/${request._id}`)
+      .send({ status: 'Resolved' });
+
+    expect(response.status).toBe(403);
+    expect((await MaintenanceRequest.findById(request._id)).status).toBe('Open');
+  });
+
+  it('requires authentication', async () => {
+    const { request } = await createRequest();
+    const supertest = require('supertest');
+    const response = await supertest(app)
+      .patch(`/api/maintenance-requests/${request._id}`)
+      .send({ status: 'Resolved' });
+    expect(response.status).toBe(401);
+  });
+
+  it('rejects an invalid or unchanged status', async () => {
+    const { request } = await createRequest();
+    const staff = await loginAs('maintenance');
+    const api = as(app, staff.header);
+
+    for (const status of [undefined, 'Closed', 42]) {
+      const response = await api.patch(`/api/maintenance-requests/${request._id}`).send({ status });
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('INVALID_STATUS');
+    }
+
+    const unchanged = await api.patch(`/api/maintenance-requests/${request._id}`).send({ status: 'Open' });
+    expect(unchanged.status).toBe(400);
+    expect(unchanged.body.error.code).toBe('STATUS_UNCHANGED');
+  });
+
+  it('changes only the status, ignoring other fields', async () => {
+    const { request } = await createRequest();
+    const staff = await loginAs('maintenance');
+
+    await as(app, staff.header)
+      .patch(`/api/maintenance-requests/${request._id}`)
+      .send({ status: 'In Progress', description: 'Tampered', priority: 'Low' });
+
+    const saved = await MaintenanceRequest.findById(request._id);
+    expect(saved.description).toBe(sample.description);
+    expect(saved.priority).toBe(sample.priority);
+  });
+
+  it('returns 404 for an unknown or malformed id', async () => {
+    const staff = await loginAs('maintenance');
+    const api = as(app, staff.header);
+    const missing = await api.patch('/api/maintenance-requests/507f1f77bcf86cd799439011').send({ status: 'Resolved' });
+    expect(missing.status).toBe(404);
+    const malformed = await api.patch('/api/maintenance-requests/not-an-id').send({ status: 'Resolved' });
+    expect(malformed.status).toBe(404);
   });
 });

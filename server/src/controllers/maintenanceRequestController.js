@@ -1,8 +1,10 @@
+const mongoose = require('mongoose');
 const MaintenanceRequest = require('../models/MaintenanceRequest');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { recordAuditLog } = require('../utils/auditLogger');
 
-const { CATEGORIES, PRIORITIES } = MaintenanceRequest;
+const { CATEGORIES, PRIORITIES, STATUSES } = MaintenanceRequest;
 
 function readString(body, field) {
   return typeof body[field] === 'string' ? body[field].trim() : '';
@@ -61,4 +63,53 @@ const listMaintenanceRequests = asyncHandler(async (req, res) => {
   res.json({ count: requests.length, requests });
 });
 
-module.exports = { createMaintenanceRequest, listMaintenanceRequests };
+/**
+ * PATCH /api/maintenance-requests/:id (FR-05, UC-05)
+ * Maintenance staff (and admin, from the FR-09 Kanban board) move a request
+ * between Open, In Progress and Resolved. Only the status can be changed here.
+ */
+const updateMaintenanceRequestStatus = asyncHandler(async (req, res) => {
+  const status = readString(req.body || {}, 'status');
+
+  if (!STATUSES.includes(status)) {
+    throw new ApiError(400, 'INVALID_STATUS', `Status must be one of: ${STATUSES.join(', ')}.`, 'status');
+  }
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    throw new ApiError(404, 'NOT_FOUND', 'Maintenance request not found.');
+  }
+
+  const request = await MaintenanceRequest.findById(req.params.id);
+  if (!request) {
+    throw new ApiError(404, 'NOT_FOUND', 'Maintenance request not found.');
+  }
+  if (request.status === status) {
+    throw new ApiError(400, 'STATUS_UNCHANGED', 'The request already has this status.', 'status');
+  }
+
+  const previousStatus = request.status;
+  request.status = status;
+  request.statusHistory.push({ status, changedAt: new Date(), changedBy: req.user._id });
+  await request.save();
+
+  // Only audit status changes performed by an administrator (same rule as complaints).
+  if (req.user.role === 'admin') {
+    await recordAuditLog({
+      actorId: req.user._id,
+      action: 'MAINTENANCE_STATUS_UPDATED',
+      resourceType: 'MaintenanceRequest',
+      resourceId: request._id,
+      metadata: { from: previousStatus, to: status },
+    });
+  }
+
+  res.json({
+    message: `Request status updated to ${status}.`,
+    request,
+  });
+});
+
+module.exports = {
+  createMaintenanceRequest,
+  listMaintenanceRequests,
+  updateMaintenanceRequestStatus,
+};
