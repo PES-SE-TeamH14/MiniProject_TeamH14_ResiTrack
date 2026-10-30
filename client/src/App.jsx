@@ -9,6 +9,7 @@ import TenantsPage from './pages/admin/TenantsPage.jsx';
 import RentPage from './pages/admin/RentPage.jsx';
 import VisitorsPage from './pages/admin/VisitorsPage.jsx';
 import DocumentsPage from './pages/admin/DocumentsPage.jsx';
+import MaintenanceBoardPage from './pages/admin/MaintenanceBoardPage.jsx';
 import ComplaintsPage from './pages/ComplaintsPage.jsx';
 import MyReceiptsPage from './pages/MyReceiptsPage.jsx';
 import MaintenanceRequestsPage from './pages/MaintenanceRequestsPage.jsx';
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/admin/rent" element={<RentPage />} />
           <Route path="/admin/visitors" element={<VisitorsPage />} />
           <Route path="/admin/documents" element={<DocumentsPage />} />
+          <Route path="/admin/maintenance" element={<MaintenanceBoardPage />} />
         </Route>
 
         <Route element={<RequireAuth roles={['resident']} />}>

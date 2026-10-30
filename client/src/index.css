@@ -285,6 +285,78 @@ input:disabled {
   color: #57606a;
 }
 
+/* ---------- Maintenance Kanban board (FR-09) ---------- */
+
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.kanban-column {
+  background: #eaeef2;
+  border: 2px dashed transparent;
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 160px;
+}
+
+.kanban-column.drag-over {
+  border-color: #0969da;
+  background: #ddf4ff;
+}
+
+.kanban-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.kanban-empty {
+  margin: 8px 0;
+  font-size: 0.9rem;
+}
+
+.kanban-card {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: grab;
+}
+
+.kanban-card.saving {
+  opacity: 0.6;
+}
+
+.kanban-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-desc {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.kanban-meta {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+}
+
+.kanban-move {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
 /* ---------- Summary tiles ---------- */
 
 .stats {
