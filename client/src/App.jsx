@@ -13,6 +13,7 @@ import ComplaintsPage from './pages/ComplaintsPage.jsx';
 import MyReceiptsPage from './pages/MyReceiptsPage.jsx';
 import MaintenanceRequestsPage from './pages/MaintenanceRequestsPage.jsx';
 import NoticesPage from './pages/NoticesPage.jsx';
+import FinancialSummaryPage from './pages/owner/FinancialSummaryPage.jsx';
 
 // Pages for each role are added as their backlog items are built.
 // Page access mirrors the API's role rules (FR-14).
@@ -42,6 +43,10 @@ export default function App() {
 
         <Route element={<RequireAuth roles={['resident', 'admin']} />}>
           <Route path="/notices" element={<NoticesPage />} />
+        </Route>
+
+        <Route element={<RequireAuth roles={['owner', 'admin']} />}>
+          <Route path="/owner/summary" element={<FinancialSummaryPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
