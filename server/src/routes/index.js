@@ -6,6 +6,7 @@ const tenantRoutes = require('./tenantRoutes');
 const paymentRoutes = require('./paymentRoutes');
 const visitorRoutes = require('./visitorRoutes');
 const complaintRoutes = require('./complaintRoutes');
+const maintenanceRequestRoutes = require('./maintenanceRequestRoutes');
 const auditLogRoutes = require('./auditLogRoutes');
 const noticeRoutes = require('./noticeRoutes');
 const documentRoutes = require('./documentRoutes');
@@ -25,8 +26,9 @@ router.use('/tenants', protect, tenantRoutes); // FR-01 (#8)
 router.use('/payments', protect, paymentRoutes); // FR-06 (#9)
 router.use('/visitors', protect, visitorRoutes); // FR-08 (#13)
 router.use('/complaints', protect, complaintRoutes); // FR-13 (#14)
+router.use('/maintenance-requests', protect, maintenanceRequestRoutes); // FR-04 (#11)
 router.use('/audit-logs', protect, auditLogRoutes);
-router.use('/notices', protect, noticeRoutes);
+router.use('/notices', protect, noticeRoutes); // FR-03 (#10)
 router.use('/documents', protect, documentRoutes); // FR-11 (#21)
 router.use('/reminders', protect, reminderRoutes); // FR-07 (#17)
 
