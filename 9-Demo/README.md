@@ -39,3 +39,59 @@ npm run dev
 Log in at http://localhost:5173/login with `admin@resitrack.local` or `resident@resitrack.local` (password `Demo@12345`, demo data only).
 
 The video was recorded with an automated browser script (Playwright) driving the real app, so every click and request in it is genuine.
+
+---
+
+# Sprint-2 demo, documentation and code freeze (#27, DEL-02)
+
+## Before recording
+
+Merge the open Sprint-2 pull requests first, so the video shows the final product. Then, from an up-to-date `master`:
+
+```bash
+cd server
+npm run seed-demo   # demo logins, flats, tenants, payments, visitors, complaints
+npm run dev
+# in another terminal
+cd client
+npm run dev
+```
+
+Raise two or three maintenance requests as the resident before you start recording, so the board has cards.
+
+## Shot list (about 2 minutes)
+
+| # | Login | What to show | Backlog item |
+|---|---|---|---|
+| 1 | admin | Flats, then Tenants: register a tenant in a vacant flat | FR-12 #7, FR-01 #8, NFR-07 #26 |
+| 2 | admin | Rent page; download a PDF receipt | FR-06 #9, FR-15 #18 |
+| 3 | admin | Publish a community notice | FR-03 #10 |
+| 4 | admin | Maintenance board: drag a card from Open to In Progress | FR-09 #24 |
+| 5 | admin | Documents: upload a lease agreement | FR-11 #21 |
+| 6 | resident | Notices page shows the new notice | FR-03 #10 |
+| 7 | resident | Maintenance: raise a request and see the "Status: Open" confirmation | FR-04 #11 |
+| 8 | maintenance | Maintenance: change that request to Resolved | FR-05 #12 |
+| 9 | resident | Within 3 s the request shows Resolved without reloading | FR-05 #12 |
+| 10 | resident | Browser narrowed to 375px (DevTools device mode): menus and tables still usable | NFR-06 #25 |
+| 11 | owner | Financial summary, if FR-10 is merged | FR-10 #28 |
+
+Save the video as `9-Demo/Sprint2_Demo.mp4` and add a link to it at the top of this section.
+
+## Documentation checklist
+
+- [ ] `3-RE/Deviations_from_SRS_SAD_TestPlan.md`: every module owner has added their deviations
+- [ ] `2-Test-Planning/TC-NFR-07_Onboarding_Usability_Test.md`: results table filled in
+- [ ] README "Getting Started" checked against a fresh clone
+
+## Code freeze
+
+When every Sprint-2 pull request is merged and CI on `master` is green, the team lead tags the final version and creates a GitHub release from it:
+
+```bash
+git switch master
+git pull
+git tag -a v2.0 -m "Sprint-2 final release (code freeze)"
+git push origin v2.0
+```
+
+After the tag, `master` only takes fixes the whole team agrees on.
