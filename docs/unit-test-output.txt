@@ -1,0 +1,515 @@
+PASS tests/architecture.test.js
+
+  MVC layering (NFR-09, TC-NFR-09)
+    ✓ has a folder for each MVC layer (12 ms)
+    ✓ keeps Express out of models and controllers (7 ms)
+    ✓ gives every route file a matching controller (2 ms)
+    ✓ mounts every route file in routes/index.js (1 ms)
+    routes/
+      ✓ auditLogRoutes.js does not depend on models, services (9 ms)
+      ✓ authRoutes.js does not depend on models, services (1 ms)
+      ✓ complaintRoutes.js does not depend on models, services (1 ms)
+      ✓ documentRoutes.js does not depend on models, services (1 ms)
+      ✓ flatRoutes.js does not depend on models, services (5 ms)
+      ✓ healthRoutes.js does not depend on models, services (1 ms)
+      ✓ index.js does not depend on models, services (2 ms)
+      ✓ maintenanceRequestRoutes.js does not depend on models, services (1 ms)
+      ✓ noticeRoutes.js does not depend on models, services
+      ✓ paymentRoutes.js does not depend on models, services (1 ms)
+      ✓ reminderRoutes.js does not depend on models, services (1 ms)
+      ✓ reportRoutes.js does not depend on models, services
+      ✓ tenantRoutes.js does not depend on models, services
+      ✓ visitorRoutes.js does not depend on models, services (1 ms)
+    controllers/
+      ✓ auditLogController.js does not depend on routes, controllers
+      ✓ authController.js does not depend on routes, controllers
+      ✓ complaintController.js does not depend on routes, controllers
+      ✓ documentController.js does not depend on routes, controllers (1 ms)
+      ✓ flatController.js does not depend on routes, controllers
+      ✓ healthController.js does not depend on routes, controllers (1 ms)
+      ✓ maintenanceRequestController.js does not depend on routes, controllers
+      ✓ noticeController.js does not depend on routes, controllers (1 ms)
+      ✓ paymentController.js does not depend on routes, controllers (1 ms)
+      ✓ reminderController.js does not depend on routes, controllers (1 ms)
+      ✓ reportController.js does not depend on routes, controllers
+      ✓ tenantController.js does not depend on routes, controllers
+      ✓ visitorController.js does not depend on routes, controllers (1 ms)
+    models/
+      ✓ AuditLog.js does not depend on controllers, routes, services, middleware (1 ms)
+      ✓ Complaint.js does not depend on controllers, routes, services, middleware (1 ms)
+      ✓ Document.js does not depend on controllers, routes, services, middleware
+      ✓ Flat.js does not depend on controllers, routes, services, middleware (1 ms)
+      ✓ MaintenanceRequest.js does not depend on controllers, routes, services, middleware
+      ✓ Notice.js does not depend on controllers, routes, services, middleware (1 ms)
+      ✓ Payment.js does not depend on controllers, routes, services, middleware
+      ✓ Reminder.js does not depend on controllers, routes, services, middleware
+      ✓ Tenant.js does not depend on controllers, routes, services, middleware
+      ✓ User.js does not depend on controllers, routes, services, middleware
+      ✓ Visitor.js does not depend on controllers, routes, services, middleware
+    services/
+      ✓ notifier.js does not depend on controllers, routes
+      ✓ receiptService.js does not depend on controllers, routes
+      ✓ reminderScheduler.js does not depend on controllers, routes (1 ms)
+      ✓ reminderService.js does not depend on controllers, routes
+    middleware/
+      ✓ auth.js does not depend on controllers, routes (1 ms)
+      ✓ enforceHttps.js does not depend on controllers, routes
+      ✓ errorHandler.js does not depend on controllers, routes (1 ms)
+      ✓ notFound.js does not depend on controllers, routes (1 ms)
+      ✓ upload.js does not depend on controllers, routes (1 ms)
+    utils/
+      ✓ ApiError.js does not depend on controllers, routes, middleware
+      ✓ asyncHandler.js does not depend on controllers, routes, middleware (1 ms)
+      ✓ auditLogger.js does not depend on controllers, routes, middleware (1 ms)
+      ✓ simplePdf.js does not depend on controllers, routes, middleware
+      ✓ token.js does not depend on controllers, routes, middleware (1 ms)
+    config/
+      ✓ db.js does not depend on controllers, routes, models, services, middleware (1 ms)
+PASS tests/db.test.js
+  connectDB (config/db.js)
+    ✓ refuses to start without MONGODB_URI (23 ms)
+    ✓ connects with the given URI and returns the connection (2 ms)
+    ✓ passes connection failures to the caller (1 ms)
+PASS tests/reminderScheduler.test.js
+  startReminderScheduler (FR-07)
+    ✓ schedules the job every day at 09:00 India time by default (11 ms)
+    ✓ uses the schedule and time zone from the environment (1 ms)
+    ✓ does not start under test or when switched off (1 ms)
+    ✓ does not start with an invalid cron expression
+PASS tests/https.test.js (5.142 s)
+  enforceHttps middleware (enabled)
+    ✓ redirects a plain HTTP GET to the same URL on HTTPS (308) (61 ms)
+    ✓ rejects a plain HTTP POST with 426 and the standard error body (8 ms)
+    ✓ serves requests that arrived over HTTPS (X-Forwarded-Proto: https) (4 ms)
+    ✓ serves a POST that arrived over HTTPS (5 ms)
+    ✓ keeps /api/health reachable over HTTP for platform health checks (5 ms)
+    ✓ uses the fixed HTTPS_HOST for the redirect when one is configured (4 ms)
+  enforceHttps middleware (disabled, local development)
+    ✓ lets plain HTTP through (4 ms)
+  the real app with FORCE_HTTPS=true TRUST_PROXY=1
+    ✓ redirects plain HTTP API calls to HTTPS (7 ms)
+    ✓ rejects plain HTTP logins (7 ms)
+    ✓ sends Strict-Transport-Security on HTTPS responses (6 ms)
+PASS tests/app.test.js (5.214 s)
+  GET /api/health
+    ✓ returns status ok (52 ms)
+  unknown routes
+    ✓ return 404 in the standard error format (7 ms)
+  error handler
+    ✓ maps ApiError to its status, code and field (7 ms)
+    ✓ maps validation errors to 400 with the field name (6 ms)
+    ✓ maps duplicate keys to 409 (6 ms)
+    ✓ passes async errors to the handler (4 ms)
+    ✓ hides internal details on 500 (4 ms)
+    ✓ rejects malformed JSON with 400 (36 ms)
+PASS tests/auditLogs.test.js (8.357 s)
+  GET /api/audit-logs
+    ✓ allows admins to retrieve audit logs, newest first (608 ms)
+    ✓ rejects residents (22 ms)
+    ✓ rejects requests without authentication (13 ms)
+    ✓ limits the number of returned entries (32 ms)
+PASS tests/notices.test.js (8.544 s)
+  community notices (FR-03)
+    ✓ allows an admin to publish a notice and records an audit event (574 ms)
+    ✓ rejects notice creation by a resident (23 ms)
+    ✓ requires a title and message (32 ms)
+    ✓ allows residents to view active notices, newest first, without inactive notices (49 ms)
+    ✓ lets a maintenance read notices but not publish them (39 ms)
+    ✓ lets a owner read notices but not publish them (42 ms)
+    ✓ requires login to view notices (12 ms)
+PASS tests/visitors.test.js (8.565 s)
+  POST /api/visitors
+    ✓ registers a visitor and creates timestamps (571 ms)
+    ✓ creates an audit entry for an admin visitor registration (30 ms)
+    ✓ does not include visitor personal details in the audit entry (27 ms)
+    ✓ requires the visitor name (25 ms)
+    ✓ requires contact, purpose and flat number (45 ms)
+    ✓ does not allow the client to set the creation timestamp (29 ms)
+  GET /api/visitors
+    ✓ lists visitors with the newest entry first (46 ms)
+    ✓ returns an empty list when there are no visitors (21 ms)
+PASS tests/complaints.test.js (8.653 s)
+  POST /api/complaints
+    ✓ creates a complaint with Open status and initial history (565 ms)
+    ✓ requires the title (25 ms)
+    ✓ requires the description, category and flat number (43 ms)
+    ✓ does not allow the client to set the initial status (22 ms)
+  GET /api/complaints
+    ✓ lists complaints newest first (53 ms)
+    ✓ returns an empty list when there are no complaints (21 ms)
+  PATCH /api/complaints/:id/status
+    ✓ updates status and appends a timestamped history entry (49 ms)
+    ✓ creates an audit entry for an admin status update (33 ms)
+    ✓ does not include complaint details or status notes in the audit entry (32 ms)
+    ✓ rejects an invalid status without creating an audit entry (24 ms)
+    ✓ rejects a status update that changes nothing without creating an audit entry (25 ms)
+    ✓ returns 404 for an unknown complaint without creating an audit entry (22 ms)
+PASS tests/receipts.test.js (8.763 s)
+  GET /api/payments/:id/receipt (FR-15, TC-15)
+    ✓ lets the admin download a PDF with tenant name, flat, amount and date (487 ms)
+    ✓ produces a well-formed PDF (the cross-reference table points at the right bytes) (43 ms)
+    ✓ writes an audit log entry for the download (40 ms)
+    ✓ returns 404 for an unknown or invalid payment id (41 ms)
+    ✓ lets a resident download their own receipt (39 ms)
+    ✓ returns 404 when a resident asks for someone else's receipt (40 ms)
+    ✓ needs a login (27 ms)
+    ✓ is forbidden for the maintenance role (30 ms)
+    ✓ is forbidden for the owner role (31 ms)
+  GET /api/payments/mine
+    ✓ lists only the resident's own payments (37 ms)
+    ✓ is empty for a resident with no tenant record (32 ms)
+    ✓ is forbidden for the admin and needs a login (32 ms)
+  other payment routes stay Admin only
+    ✓ forbids a resident from listing payments or opening one (40 ms)
+  SimplePdf
+    ✓ escapes brackets and backslashes, and replaces characters it cannot print (16 ms)
+    ✓ writes text, lines and boxes into the page (18 ms)
+PASS tests/reports.test.js (8.839 s)
+  GET /api/reports/financial-summary (FR-10, TC-10)
+    ✓ returns occupancy, rent and trend totals for the month (539 ms)
+    ✓ totals match an independent aggregation of the database (62 ms)
+    ✓ does not charge rent for a month outside the tenant lease (47 ms)
+    ✓ returns zeros, not errors, for an empty complex (25 ms)
+    ✓ defaults to the current month (49 ms)
+    ✓ rejects month="2026-13" with 400 (18 ms)
+    ✓ rejects month="2026-1" with 400 (16 ms)
+    ✓ rejects month="October" with 400 (21 ms)
+    ✓ rejects month="" with 400 (20 ms)
+    ✓ never exposes tenant names or contact details (41 ms)
+    ✓ is also available to admins (24 ms)
+  access to reports (FR-10 read-only, FR-14)
+    ✓ requires a login (16 ms)
+    ✓ is forbidden for the resident role (23 ms)
+    ✓ is forbidden for the maintenance role (22 ms)
+    ✓ refuses post from an owner with 405 (read-only) (39 ms)
+    ✓ refuses put from an owner with 405 (read-only) (19 ms)
+    ✓ refuses patch from an owner with 405 (read-only) (17 ms)
+    ✓ refuses delete from an owner with 405 (read-only) (20 ms)
+  month helpers
+    ✓ shiftMonth crosses year boundaries (10 ms)
+    ✓ currentMonth uses India time (10 ms)
+PASS tests/flats.test.js (8.834 s)
+  POST /api/flats (FR-12 add)
+    ✓ adds a flat and stores the flat number in upper case (524 ms)
+    ✓ creates an audit entry for the admin who created the flat (31 ms)
+    ✓ requires a flat number (26 ms)
+    ✓ requires a monthly rent (22 ms)
+    ✓ rejects a negative rent (23 ms)
+    ✓ rejects an unknown flat type (22 ms)
+    ✓ rejects a duplicate flat number with 409 (39 ms)
+    ✓ ignores isOccupied sent by the client (23 ms)
+  GET /api/flats
+    ✓ lists all flats sorted by flat number (31 ms)
+    ✓ filters active and inactive flats (36 ms)
+    ✓ available=true returns only active, vacant flats (24 ms)
+    ✓ rejects an invalid status filter (24 ms)
+  GET /api/flats/:id
+    ✓ returns one flat (22 ms)
+    ✓ returns 404 for an unknown or malformed id (25 ms)
+  PATCH /api/flats/:id (FR-12 edit / deactivate)
+    ✓ edits a flat and creates an audit entry (30 ms)
+    ✓ deactivates and reactivates a flat (55 ms)
+    ✓ refuses to deactivate an occupied flat (24 ms)
+    ✓ validates edited values (23 ms)
+    ✓ rejects renaming to an existing flat number (27 ms)
+    ✓ returns 404 for an unknown flat (25 ms)
+PASS tests/maintenanceRequests.test.js (8.985 s)
+  POST /api/maintenance-requests
+    ✓ saves a resident request with Open status and returns confirmation (624 ms)
+    ✓ does not allow the client to choose the initial status (27 ms)
+    ✓ requires category, description and priority (37 ms)
+    ✓ rejects unknown categories and priorities (29 ms)
+    ✓ rejects blank or non-text descriptions without crashing (42 ms)
+    ✓ rejects requests from users who are not residents (23 ms)
+    ✓ requires authentication (13 ms)
+  GET /api/maintenance-requests
+    ✓ lets residents see only their own requests (49 ms)
+    ✓ lets admin and maintenance staff see all requests (54 ms)
+    ✓ blocks owners from listing requests (20 ms)
+  PATCH /api/maintenance-requests/:id
+    ✓ lets maintenance staff change the status and saves it with history (56 ms)
+    ✓ lets an admin move a request (FR-09 Kanban) and audits it (45 ms)
+    ✓ returns 403 for a resident and leaves the status unchanged (37 ms)
+    ✓ returns 403 for a owner and leaves the status unchanged (33 ms)
+    ✓ requires authentication (26 ms)
+    ✓ rejects an invalid or unchanged status (51 ms)
+    ✓ changes only the status, ignoring other fields (35 ms)
+    ✓ returns 404 for an unknown or malformed id (28 ms)
+  GET /api/maintenance-requests?status=
+    ✓ filters by status for the Kanban board (31 ms)
+    ✓ rejects an unknown status filter (18 ms)
+    ✓ still limits residents to their own requests when filtering (29 ms)
+PASS tests/documents.test.js (9.041 s)
+  POST /api/documents (FR-11, TC-11)
+    ✓ accepts a PDF, stores it and returns the record without the file contents (548 ms)
+    ✓ accepts a JPEG ID proof (34 ms)
+    ✓ accepts a file of exactly 5 MB (202 ms)
+    ✓ rejects a file over 5 MB with 413 and stores nothing (50 ms)
+    ✓ rejects other file types with 415 and stores nothing (28 ms)
+    ✓ checks the file contents, not the name or the claimed type (28 ms)
+    ✓ requires a file (24 ms)
+    ✓ requires a valid document type (32 ms)
+    ✓ requires a valid, existing tenant (41 ms)
+    ✓ keeps only the file name, without folders (29 ms)
+    ✓ records the upload in the audit log (NFR-10) (37 ms)
+    ✓ refuses non-admin users before reading the upload (29 ms)
+  GET /api/documents
+    ✓ lists documents newest first, without file contents (72 ms)
+    ✓ filters by tenant (47 ms)
+    ✓ rejects an invalid tenant filter (23 ms)
+  GET /api/documents/:id/file
+    ✓ returns the exact stored file with its type and name (40 ms)
+    ✓ returns 404 for an unknown document (20 ms)
+PASS tests/rbac.test.js (9.155 s)
+  protect: who is logged in (FR-14, TC-14)
+    ✓ rejects a request with no token with 401 AUTH_REQUIRED (114 ms)
+    ✓ rejects a header that is not a Bearer token (279 ms)
+    ✓ rejects a tampered token with 401 INVALID_TOKEN (20 ms)
+    ✓ rejects garbage in place of a token with 401 INVALID_TOKEN (14 ms)
+    ✓ rejects an expired token with 401 SESSION_EXPIRED (NFR-05) (26 ms)
+    ✓ does not refresh an expired token (25 ms)
+    ✓ accepts a token that is still inside the 30-minute window (23 ms)
+    ✓ rejects a token for a user who has been deactivated (25 ms)
+    ✓ rejects a token for a user who no longer exists (21 ms)
+    ✓ keeps public routes open: health and login need no token (32 ms)
+  sliding session: X-Auth-Token (NFR-05)
+    ✓ sends a fresh token on every authenticated request (22 ms)
+    ✓ the fresh token works for the next request (28 ms)
+    ✓ extends an old-but-valid session to a full 30 minutes from now (23 ms)
+    ✓ lets the browser read the header through CORS (18 ms)
+    ✓ does not send a token on failed logins or public routes (11 ms)
+  authorize: role allowlists (FR-14, SEC-03)
+    ✓ every protected route rejects a request with no token (86 ms)
+    ✓ refuses each role on routes it is not allowed, with 403 FORBIDDEN (559 ms)
+    ✓ does not touch the database when the role is refused (16 ms)
+    ✓ uses the role stored in the database, not the one in the token (17 ms)
+  authorize() setup errors
+    ✓ throws if no roles are given (23 ms)
+    ✓ throws on an unknown role name, catching typos early (5 ms)
+PASS tests/tenants.test.js (9.251 s)
+  POST /api/tenants (FR-01, TC-01)
+    ✓ registers a tenant with all fields and marks the flat occupied (572 ms)
+    ✓ creates a TENANT_CREATED audit entry without tenant contact details (41 ms)
+    ✓ requires name (33 ms)
+    ✓ requires email (23 ms)
+    ✓ requires phone (25 ms)
+    ✓ requires leaseStart (27 ms)
+    ✓ requires flat (24 ms)
+    ✓ rejects an invalid email (23 ms)
+    ✓ rejects an invalid phone number (23 ms)
+    ✓ rejects a lease that ends before it starts (25 ms)
+    ✓ rejects a malformed or unknown flat (32 ms)
+    ✓ does not assign a deactivated flat (TC-12) (29 ms)
+    ✓ does not assign an occupied flat (47 ms)
+    ✓ rejects a duplicate email with 409 and leaves the new flat vacant (50 ms)
+  GET /api/tenants
+    ✓ lists current tenants by default, with their flat (31 ms)
+    ✓ lists past and all tenants (40 ms)
+    ✓ rejects an invalid status filter (22 ms)
+  GET / PATCH /api/tenants/:id
+    ✓ returns one tenant (44 ms)
+    ✓ returns 404 for an unknown tenant (35 ms)
+    ✓ updates contact details and lease dates and records the audit event (44 ms)
+    ✓ validates updated lease dates (37 ms)
+    ✓ does not change the flat through PATCH (30 ms)
+  POST /api/tenants/:id/move-out
+    ✓ ends the tenancy, frees the flat and records the audit event (47 ms)
+    ✓ refuses to move out the same tenant twice (42 ms)
+    ✓ lets a former tenant register again with the same email (44 ms)
+    ✓ returns 404 for an unknown tenant (17 ms)
+PASS tests/payments.test.js (9.341 s)
+  POST /api/payments (FR-06, TC-06)
+    ✓ records a payment with amount, date and flat (578 ms)
+    ✓ creates a PAYMENT_RECORDED audit entry for the admin (57 ms)
+    ✓ uses the flat rent when no amount is given (46 ms)
+    ✓ rejects the month "2026-13" (30 ms)
+    ✓ rejects the month "Oct 2026" (29 ms)
+    ✓ rejects the month "2026-1" (26 ms)
+    ✓ rejects the month undefined (25 ms)
+    ✓ rejects a zero or negative amount (38 ms)
+    ✓ rejects a payment date in the future (34 ms)
+    ✓ rejects an unknown payment method (30 ms)
+    ✓ rejects a malformed or unknown tenant (34 ms)
+    ✓ does not record rent for a tenant who has moved out (35 ms)
+    ✓ allows only one payment per tenant per month (72 ms)
+  GET /api/payments
+    ✓ lists all payments, newest first, with tenant and flat (91 ms)
+    ✓ filters by month and by tenant (87 ms)
+    ✓ rejects invalid filters (74 ms)
+    ✓ returns one payment, or 404 (80 ms)
+  GET /api/payments/status (paid / unpaid per month)
+    ✓ marks each current tenant Paid or Unpaid, with totals (40 ms)
+    ✓ only includes tenants whose lease covers the month (21 ms)
+    ✓ leaves out tenants who have moved out (21 ms)
+    ✓ requires a valid month (18 ms)
+PASS tests/reminders.test.js (9.399 s)
+  sendDueReminders: when a reminder is due (FR-07, TC-07)
+    ✓ sends an UPCOMING reminder exactly 3 days before the due date (425 ms)
+    ✓ sends nothing more than 3 days before the due date (39 ms)
+    ✓ sends an OVERDUE reminder once the due date has passed (39 ms)
+    ✓ reminds on the due date itself (42 ms)
+    ✓ skips a tenant who has already paid that month (40 ms)
+    ✓ skips a tenant who has moved out (47 ms)
+    ✓ skips a tenant whose lease ended before the month (38 ms)
+    ✓ skips a tenant whose lease starts after the due date (34 ms)
+    ✓ looks into next month when the due date is just after a month end (48 ms)
+    ✓ starts earlier when REMINDER_DAYS_BEFORE is larger (42 ms)
+  sendDueReminders: sending each reminder once
+    ✓ does not send the same reminder twice (60 ms)
+    ✓ sends the OVERDUE reminder later even though the UPCOMING one was sent (54 ms)
+    ✓ records a failed delivery and retries it on the next run (65 ms)
+    ✓ retries a reminder stuck in "pending", but not one that is being sent right now (47 ms)
+    ✓ passes the tenant and the message to the notifier (34 ms)
+  getConfig
+    ✓ uses the defaults (14 ms)
+    ✓ reads valid settings from the environment (16 ms)
+    ✓ falls back to the defaults for invalid settings (15 ms)
+  POST /api/reminders/run (UC-07)
+    ✓ runs the reminders for a given date and writes an audit log entry (84 ms)
+    ✓ runs for today when no date is sent (48 ms)
+    ✓ rejects the date "2026-02-30" (20 ms)
+    ✓ rejects the date "tomorrow" (24 ms)
+    ✓ rejects the date "02-11-2026" (23 ms)
+    ✓ rejects the date 20261102 (20 ms)
+    ✓ needs a login (15 ms)
+    ✓ is forbidden for the resident role (21 ms)
+    ✓ is forbidden for the maintenance role (20 ms)
+    ✓ is forbidden for the owner role (24 ms)
+  GET /api/reminders
+    ✓ lists reminders with tenant and flat details (34 ms)
+    ✓ filters by status and by month (41 ms)
+    ✓ rejects an invalid month or status (33 ms)
+    ✓ is forbidden for a resident (32 ms)
+  console.log
+    Response times with 500 tenants:
+      /api/tenants: 97 ms
+      /api/flats: 22 ms
+      /api/payments/status?month=2026-11: 54 ms
+      /api/payments?month=2026-11: 41 ms
+      /api/payments: 97 ms
+      /api/visitors: 9 ms
+      /api/complaints: 19 ms
+
+      at Object.log (tests/scale.test.js:25:11)
+
+PASS tests/scale.test.js (9.532 s)
+  seeded data (500 tenants)
+    ✓ database holds 500 flats, 500 current tenants and their payments (18 ms)
+  list endpoints respond within 3 s with 500 tenants
+    ✓ GET /api/tenants returns all 500 current tenants with their flats (97 ms)
+    ✓ GET /api/flats returns all 500 flats (23 ms)
+    ✓ GET /api/payments/status covers all 500 tenants for the month (55 ms)
+    ✓ GET /api/payments lists a month and the full history (139 ms)
+    ✓ GET /api/visitors and /api/complaints list newest first (31 ms)
+  indexes on reference and sort fields
+    ✓ tenants has an index on Model { Tenant } (2 ms)
+    ✓ tenants has an index on Model { Tenant } (1 ms)
+    ✓ payments has an index on Model { Payment }
+    ✓ payments has an index on Model { Payment } (1 ms)
+    ✓ payments has an index on Model { Payment } (1 ms)
+    ✓ flats has an index on Model { Flat } (1 ms)
+    ✓ visitors has an index on Model { Visitor } (1 ms)
+    ✓ complaints has an index on Model { Complaint }
+    ✓ finding the tenant of a flat uses the flat index, not a full scan (4 ms)
+    ✓ a tenant's payments are found through the tenant index (3 ms)
+    ✓ the tenant list is read in name order from the index (no in-memory sort) (2 ms)
+PASS tests/auth.test.js (17.82 s)
+  User model: password storage (NFR-03)
+    ✓ stores the password as a bcrypt hash with cost 12, never as plain text (833 ms)
+    ✓ does not re-hash the password when other fields change (279 ms)
+    ✓ re-hashes when the password is changed (934 ms)
+    ✓ never returns the password from queries or JSON (193 ms)
+    ✓ rejects a password shorter than 8 characters (6 ms)
+    ✓ rejects an unknown role (3 ms)
+    ✓ rejects a duplicate email, ignoring case (397 ms)
+  POST /api/auth/login (FR-02)
+    ✓ logs in with valid credentials and returns a token and the user (410 ms)
+    ✓ accepts the email in any case and with surrounding spaces (385 ms)
+    ✓ does not create an admin-login audit entry for a resident login (368 ms)
+    ✓ records a successful admin login with actor ID and timestamp only (553 ms)
+    ✓ does not create an admin-login audit entry for failed credentials (1271 ms)
+    ✓ gives the same answer for an unknown email as for a wrong password (1223 ms)
+    ✓ requires an email (615 ms)
+    ✓ requires a password (634 ms)
+    ✓ rejects a query object instead of an email (625 ms)
+    ✓ refuses to log in a deactivated account with 403 (1230 ms)
+----------------------------------|---------|----------|---------|---------|-------------------------
+File                              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------------------------------|---------|----------|---------|---------|-------------------------
+All files                         |   93.33 |    83.26 |   92.48 |   94.07 |
+ src                              |      28 |    19.44 |       0 |      30 |
+  app.js                          |   95.45 |       70 |     100 |   95.45 | 43
+  server.js                       |       0 |        0 |       0 |       0 | 1-89
+ src/config                       |     100 |      100 |     100 |     100 |
+  db.js                           |     100 |      100 |     100 |     100 |
+ src/controllers                  |   99.18 |     93.1 |     100 |   99.77 |
+  auditLogController.js           |     100 |      100 |     100 |     100 |
+  authController.js               |     100 |    94.44 |     100 |     100 | 13
+  complaintController.js          |     100 |     90.9 |     100 |     100 | 75
+  documentController.js           |     100 |    84.21 |     100 |     100 | 11-14
+  flatController.js               |     100 |      100 |     100 |     100 |
+  healthController.js             |     100 |       50 |     100 |     100 | 13
+  maintenanceRequestController.js |   98.11 |    91.17 |     100 |   98.03 | 31
+  noticeController.js             |    91.3 |    78.57 |     100 |     100 | 8,14-15
+  paymentController.js            |     100 |     97.5 |     100 |     100 | 125
+  reminderController.js           |     100 |      100 |     100 |     100 |
+  reportController.js             |     100 |    94.73 |     100 |     100 | 83
+  tenantController.js             |   98.63 |    96.29 |     100 |     100 | 103
+  visitorController.js            |     100 |       75 |     100 |     100 | 23
+ src/middleware                   |   94.59 |    89.88 |     100 |   96.07 |
+  auth.js                         |   93.02 |    88.46 |     100 |   94.87 | 47,83
+  enforceHttps.js                 |     100 |      100 |     100 |     100 |
+  errorHandler.js                 |   96.42 |    83.33 |     100 |   96.15 | 39
+  notFound.js                     |     100 |      100 |     100 |     100 |
+  upload.js                       |   91.66 |       90 |     100 |   95.65 | 39
+ src/models                       |     100 |       80 |     100 |     100 |
+  AuditLog.js                     |     100 |      100 |     100 |     100 |
+  Complaint.js                    |     100 |       50 |     100 |     100 | 62
+  Document.js                     |     100 |      100 |     100 |     100 |
+  Flat.js                         |     100 |      100 |     100 |     100 |
+  MaintenanceRequest.js           |     100 |       50 |     100 |     100 | 48
+  Notice.js                       |     100 |      100 |     100 |     100 |
+  Payment.js                      |     100 |      100 |     100 |     100 |
+  Reminder.js                     |     100 |      100 |     100 |     100 |
+  Tenant.js                       |     100 |      100 |     100 |     100 |
+  User.js                         |     100 |      100 |     100 |     100 |
+  Visitor.js                      |     100 |      100 |     100 |     100 |
+ src/routes                       |     100 |      100 |     100 |     100 |
+  auditLogRoutes.js               |     100 |      100 |     100 |     100 |
+  authRoutes.js                   |     100 |      100 |     100 |     100 |
+  complaintRoutes.js              |     100 |      100 |     100 |     100 |
+  documentRoutes.js               |     100 |      100 |     100 |     100 |
+  flatRoutes.js                   |     100 |      100 |     100 |     100 |
+  healthRoutes.js                 |     100 |      100 |     100 |     100 |
+  index.js                        |     100 |      100 |     100 |     100 |
+  maintenanceRequestRoutes.js     |     100 |      100 |     100 |     100 |
+  noticeRoutes.js                 |     100 |      100 |     100 |     100 |
+  paymentRoutes.js                |     100 |      100 |     100 |     100 |
+  reminderRoutes.js               |     100 |      100 |     100 |     100 |
+  reportRoutes.js                 |     100 |      100 |     100 |     100 |
+  tenantRoutes.js                 |     100 |      100 |     100 |     100 |
+  visitorRoutes.js                |     100 |      100 |     100 |     100 |
+ src/services                     |   94.77 |    73.52 |   94.44 |   95.93 |
+  notifier.js                     |      75 |       50 |     100 |      75 | 11
+  receiptService.js               |     100 |       50 |     100 |     100 | 8-67
+  reminderScheduler.js            |   77.77 |      100 |      50 |   76.47 | 26-32
+  reminderService.js              |   97.14 |    77.77 |     100 |     100 | 30-31,46-77,108,131,137
+ src/utils                        |   96.15 |    86.95 |     100 |   95.83 |
+  ApiError.js                     |     100 |      100 |     100 |     100 |
+  asyncHandler.js                 |     100 |      100 |     100 |     100 |
+  auditLogger.js                  |      80 |    83.33 |     100 |      80 | 16
+  simplePdf.js                    |     100 |     90.9 |     100 |     100 | 21
+  token.js                        |   88.88 |       75 |     100 |   88.88 | 9
+----------------------------------|---------|----------|---------|---------|-------------------------
+
+=============================== Coverage summary ===============================
+Statements   : 93.33% ( 1022/1095 )
+Branches     : 83.26% ( 383/460 )
+Functions    : 92.48% ( 123/133 )
+Lines        : 94.07% ( 969/1030 )
+================================================================================
+Test Suites: 20 passed, 20 total
+Tests:       340 passed, 340 total
+Snapshots:   0 total
+Time:        19.984 s
+Ran all test suites.
