@@ -24,3 +24,6 @@ coverage/
 server/certs/
 *.pem
 *.key
+
+# Keep the Part-3 coverage report in docs
+!docs/coverage/
