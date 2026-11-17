@@ -98,3 +98,9 @@ git push origin v2.0
 ```
 
 After the tag, `master` only takes fixes the whole team agrees on.
+
+## Status (17 Nov 2026)
+
+Code freeze: the Sprint-2 final version is tagged v2.0 on master after this change, with a GitHub release.
+
+Still open: the timed NFR-07 sessions with first-time users (#26). Their results table in 2-Test-Planning/TC-NFR-07_Onboarding_Usability_Test.md will be filled in after they are run.
